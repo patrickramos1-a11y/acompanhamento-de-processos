@@ -370,7 +370,6 @@ export const importAcompanhamentos = createServerFn({ method: "POST" })
         const dataEvento = parseDate(row["Data"]) ?? hoje;
         const responsavel = norm(row["Responsável"]) || norm(row["Responsavel"]) || null;
         const status = mapStatus(row["Status"]);
-        const statusDetalhado = norm(row["Status"]) || null;
 
         const dedupKey = `${dataEvento}::${descricao.slice(0, 200)}`;
         const set = tramExistentes.get(proc.id);
@@ -393,12 +392,11 @@ export const importAcompanhamentos = createServerFn({ method: "POST" })
         if (!set) tramExistentes.set(proc.id, new Set([dedupKey]));
         else set.add(dedupKey);
 
-        // atualiza status do processo conforme a tramitação importada
+        // atualiza apenas o status agregado do processo (status detalhado vem da planilha de processos)
         await supabaseAdmin
           .from("processos")
           .update({
             status,
-            status_detalhado: statusDetalhado,
             atualizado_em: new Date().toISOString(),
           })
           .eq("id", proc.id);
