@@ -736,7 +736,6 @@ function EmpresaProcessosModal({
                 <Th>Processo</Th>
                 <Th>Protocolo</Th>
                 <Th>Data</Th>
-                <Th>Etapa atual</Th>
                 <Th>Status</Th>
                 <Th>Responsável</Th>
                 <Th>Progresso</Th>
