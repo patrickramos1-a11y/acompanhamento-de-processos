@@ -843,6 +843,18 @@ function EmpresaProcessosModal({
                         </span>
                       </div>
                     </td>
+                    <td className="px-4 py-3">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onAbrirProcesso(p.id);
+                        }}
+                        className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2 py-1 text-xs font-medium text-foreground hover:bg-muted"
+                      >
+                        <ClipboardList className="h-3.5 w-3.5" />
+                        Ver acompanhamentos
+                      </button>
+                    </td>
                   </tr>
                 );
               })}
