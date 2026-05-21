@@ -180,6 +180,7 @@ export const importProcessos = createServerFn({ method: "POST" })
           `${norm(row["Tipo de Processo"]) || "Processo"} — ${empresaNome}`;
         const dataProtocolo = parseDate(row["Data do Protocolo"]);
         const status = mapStatus(row["Status"]);
+        const statusDetalhado = norm(row["Status"]) || null;
         const responsavel = norm(row["Responsável"]) || null;
 
         // upsert por (empresa_id, numero_protocolo) se houver, senão por (empresa_id, nome)
@@ -210,6 +211,7 @@ export const importProcessos = createServerFn({ method: "POST" })
           numero_protocolo: numero,
           data_protocolo: dataProtocolo,
           status,
+          status_detalhado: statusDetalhado,
           responsavel,
         };
 
