@@ -3,7 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { useState, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { importProcessos } from "@/lib/import.functions";
+import { importProcessos, importAcompanhamentos } from "@/lib/import.functions";
 import { toast } from "sonner";
 import {
   Settings,
@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   AlertTriangle,
   Loader2,
+  ListChecks,
 } from "lucide-react";
 
 export const Route = createFileRoute("/configuracoes")({
@@ -26,14 +27,22 @@ export const Route = createFileRoute("/configuracoes")({
 });
 
 type Resultado = Awaited<ReturnType<typeof importProcessos>>;
+type ResultadoAcomp = Awaited<ReturnType<typeof importAcompanhamentos>>;
 
 function ConfiguracoesPage() {
   const importar = useServerFn(importProcessos);
+  const importarAcomp = useServerFn(importAcompanhamentos);
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
   const [resultado, setResultado] = useState<Resultado | null>(null);
   const [erroGeral, setErroGeral] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const [loadingAcomp, setLoadingAcomp] = useState(false);
+  const [resultadoAcomp, setResultadoAcomp] = useState<ResultadoAcomp | null>(null);
+  const [erroAcomp, setErroAcomp] = useState<string | null>(null);
+  const inputAcompRef = useRef<HTMLInputElement>(null);
+
 
   async function handleImportarArquivo(file: File | null) {
     if (!file) return;
