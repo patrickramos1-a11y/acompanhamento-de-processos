@@ -760,7 +760,7 @@ function EmpresaProcessosModal({
                       ? ((idxAtual + 1) / total) * 100
                       : 0;
                 const parado = isParado(p);
-                const statusLabel = STATUS_TAB_LABEL[p.status] ?? p.status;
+                const statusLabel = p.status_detalhado ?? STATUS_TAB_LABEL[p.status] ?? p.status;
                 return (
                   <tr
                     key={p.id}
