@@ -41,12 +41,20 @@ function mapStatus(raw: unknown): "ativo" | "concluido" | "cancelado" | "suspens
     .replace(/[í]/g, "i")
     .replace(/[óôõ]/g, "o")
     .replace(/[ú]/g, "u");
-  if (s.includes("deferido")) return "concluido";
+  if (s.includes("deferido") && !s.includes("indeferido")) return "concluido";
   if (s.includes("reprovado") || s.includes("indeferido")) return "cancelado";
-  if (s.includes("notificado")) return "suspenso";
-  // Em análise pela Ramos → tratado como Em análise pelo órgão (ativo)
-  // Em análise pelo órgão → ativo
+  if (s.includes("notificado") || s.includes("suspenso")) return "suspenso";
+  // ANALISE_ORGAO / Em análise pela Ramos / Em análise pelo órgão → ativo
   return "ativo";
+}
+
+function normNome(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 export const importProcessos = createServerFn({ method: "POST" })
