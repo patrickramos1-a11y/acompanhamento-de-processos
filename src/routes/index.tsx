@@ -736,7 +736,6 @@ function EmpresaProcessosModal({
                 <Th>Processo</Th>
                 <Th>Protocolo</Th>
                 <Th>Data</Th>
-                <Th>Etapa atual</Th>
                 <Th>Status</Th>
                 <Th>Responsável</Th>
                 <Th>Progresso</Th>
@@ -746,7 +745,7 @@ function EmpresaProcessosModal({
             <tbody>
               {procsFiltrados.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="px-4 py-12 text-center text-muted-foreground">
+                  <td colSpan={8} className="px-4 py-12 text-center text-muted-foreground">
                     Nenhum processo nesta categoria.
                   </td>
                 </tr>
@@ -793,26 +792,7 @@ function EmpresaProcessosModal({
                         : "—"}
                     </td>
                     <td className="px-4 py-3">
-                      {etapaAtual ? (
-                        <span
-                          className="inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-medium"
-                          style={{
-                            borderColor: etapaAtual.cor + "55",
-                            background: etapaAtual.cor + "1a",
-                            color: etapaAtual.cor,
-                          }}
-                        >
-                          <span
-                            className="h-1.5 w-1.5 rounded-full"
-                            style={{ background: etapaAtual.cor }}
-                          />
-                          {etapaAtual.nome}
-                        </span>
-                      ) : (
-                        "—"
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
+
                       <span
                         className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${STATUS_CLASS[p.status]}`}
                       >
