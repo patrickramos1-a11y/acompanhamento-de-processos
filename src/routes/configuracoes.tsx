@@ -82,6 +82,45 @@ function ConfiguracoesPage() {
     inputRef.current?.click();
   }
 
+  async function handleImportarAcomp(file: File | null) {
+    if (!file) return;
+    if (!/\.(xlsx|xls)$/i.test(file.name)) {
+      const msg = "Selecione uma planilha .xlsx ou .xls";
+      setErroAcomp(msg);
+      toast.error(msg);
+      if (inputAcompRef.current) inputAcompRef.current.value = "";
+      return;
+    }
+    setLoadingAcomp(true);
+    setErroAcomp(null);
+    setResultadoAcomp(null);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await importarAcomp({ data: formData });
+      setResultadoAcomp(res);
+      toast.success(
+        `Acompanhamentos: ${res.tramitacoesCriadas} criado(s), ${res.tramitacoesIgnoradas} ignorado(s)`,
+      );
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+    } catch (e: any) {
+      console.error("Erro na importação de acompanhamentos:", e);
+      const msg = e?.message ?? "Falha na importação";
+      setErroAcomp(msg);
+      toast.error(msg);
+    } finally {
+      if (inputAcompRef.current) inputAcompRef.current.value = "";
+      setLoadingAcomp(false);
+    }
+  }
+
+  function abrirSeletorAcomp() {
+    if (loadingAcomp) return;
+    if (inputAcompRef.current) inputAcompRef.current.value = "";
+    inputAcompRef.current?.click();
+  }
+
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-sidebar text-sidebar-foreground">
