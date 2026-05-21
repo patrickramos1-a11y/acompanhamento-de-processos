@@ -768,7 +768,11 @@ function EmpresaProcessosModal({
                 const parado = isParado(p);
                 const statusLabel = STATUS_TAB_LABEL[p.status] ?? p.status;
                 return (
-                  <tr key={p.id} className="border-t border-border hover:bg-muted/40">
+                  <tr
+                    key={p.id}
+                    onClick={() => onAbrirProcesso(p.id)}
+                    className="cursor-pointer border-t border-border hover:bg-muted/40"
+                  >
                     <td className="px-4 py-3 text-muted-foreground">{tipo?.nome ?? "—"}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
