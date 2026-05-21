@@ -198,7 +198,7 @@ function Painel() {
               {porEmpresa.map((row) => (
                 <button
                   key={row.empresa.id}
-                  onClick={() => setEmpresaFiltro(row.empresa.id)}
+                  onClick={() => { setEmpresaModal(row.empresa.id); setModalStatusFiltro(""); }}
                   className="group rounded-lg border border-border bg-card p-4 text-left transition-all hover:border-primary hover:shadow-sm"
                 >
                   <div className="flex items-start justify-between gap-2">
