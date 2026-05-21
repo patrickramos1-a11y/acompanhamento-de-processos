@@ -240,3 +240,172 @@ export const importProcessos = createServerFn({ method: "POST" })
       erros,
     };
   });
+
+export const importAcompanhamentos = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => {
+    if (!(input instanceof FormData)) throw new Error("Arquivo inválido");
+    const file = input.get("file");
+    if (!(file instanceof File)) throw new Error("Arquivo não enviado");
+    return { file };
+  })
+  .handler(async ({ data }) => {
+    const XLSX = await import("xlsx");
+    const bin = Buffer.from(await data.file.arrayBuffer());
+    const wb = XLSX.read(bin, { type: "buffer", cellDates: true });
+    const sheetName =
+      wb.SheetNames.find((n) => n.toLowerCase() === "data") ?? wb.SheetNames[0];
+    const sheet = wb.Sheets[sheetName];
+    const rows = XLSX.utils.sheet_to_json<Row>(sheet, { defval: null });
+
+    const erros: { linha: number; mensagem: string }[] = [];
+    let tramitacoesCriadas = 0;
+    let tramitacoesIgnoradas = 0;
+
+    // pre-load empresas, processos, tipos
+    const [{ data: empresasDb }, { data: tiposDb }, { data: processosDb }] =
+      await Promise.all([
+        supabaseAdmin.from("empresas").select("id,nome"),
+        supabaseAdmin.from("tipos_processo").select("id,nome"),
+        supabaseAdmin
+          .from("processos")
+          .select("id,nome,numero_protocolo,empresa_id,tipo_processo_id"),
+      ]);
+
+    const empresaPorNome = new Map<string, string>();
+    for (const e of empresasDb ?? []) empresaPorNome.set(normNome(e.nome), e.id);
+
+    const tipoPorNome = new Map<string, string>();
+    for (const t of tiposDb ?? []) tipoPorNome.set(normNome(t.nome), t.id);
+
+    type Proc = {
+      id: string;
+      nome: string;
+      numero_protocolo: string | null;
+      empresa_id: string;
+      tipo_processo_id: string;
+    };
+    const procsPorEmpresa = new Map<string, Proc[]>();
+    for (const p of (processosDb ?? []) as Proc[]) {
+      if (!procsPorEmpresa.has(p.empresa_id)) procsPorEmpresa.set(p.empresa_id, []);
+      procsPorEmpresa.get(p.empresa_id)!.push(p);
+    }
+
+    function findProcesso(
+      empresaId: string,
+      numero: string,
+      tipoId: string | null,
+    ): Proc | null {
+      const lista = procsPorEmpresa.get(empresaId) ?? [];
+      const numK = normNome(numero);
+      if (numK) {
+        const byNum = lista.find(
+          (p) => p.numero_protocolo && normNome(p.numero_protocolo) === numK,
+        );
+        if (byNum) return byNum;
+        const byNome = lista.find((p) => normNome(p.nome) === numK);
+        if (byNome) return byNome;
+      }
+      if (tipoId) {
+        const sameTipo = lista.filter((p) => p.tipo_processo_id === tipoId);
+        if (sameTipo.length === 1) return sameTipo[0];
+      }
+      return null;
+    }
+
+    // dedup: carrega tramitações existentes por processo
+    const tramExistentes = new Map<string, Set<string>>();
+    {
+      const { data: tramsDb } = await supabaseAdmin
+        .from("tramitacoes")
+        .select("processo_id,data_evento,descricao");
+      for (const t of tramsDb ?? []) {
+        const key = `${t.data_evento}::${(t.descricao ?? "").slice(0, 200)}`;
+        if (!tramExistentes.has(t.processo_id)) tramExistentes.set(t.processo_id, new Set());
+        tramExistentes.get(t.processo_id)!.add(key);
+      }
+    }
+
+    const hoje = new Date().toISOString().slice(0, 10);
+
+    for (let i = 0; i < rows.length; i++) {
+      const linha = i + 2;
+      const row = rows[i];
+      try {
+        const empresaNome = norm(row["Empresa"]);
+        if (!empresaNome) {
+          erros.push({ linha, mensagem: "Empresa vazia" });
+          continue;
+        }
+        const empresaId = empresaPorNome.get(normNome(empresaNome));
+        if (!empresaId) {
+          erros.push({ linha, mensagem: `Empresa não encontrada: "${empresaNome}"` });
+          continue;
+        }
+
+        const tipoNome = norm(row["Tipo de processo"]) || norm(row["Tipo de Processo"]);
+        const tipoId = tipoNome ? (tipoPorNome.get(normNome(tipoNome)) ?? null) : null;
+
+        const numero =
+          norm(row["Nº do processo"]) ||
+          norm(row["Nº do Processo"]) ||
+          norm(row["N° do Processo"]);
+
+        const proc = findProcesso(empresaId, numero, tipoId);
+        if (!proc) {
+          erros.push({
+            linha,
+            mensagem: `Processo não encontrado para "${empresaNome}" / "${numero || tipoNome || "-"}"`,
+          });
+          continue;
+        }
+
+        const descricao = norm(row["Descrição"]) || norm(row["Descricao"]);
+        if (!descricao) {
+          erros.push({ linha, mensagem: "Descrição vazia" });
+          continue;
+        }
+
+        const dataEvento = parseDate(row["Data"]) ?? hoje;
+        const responsavel = norm(row["Responsável"]) || norm(row["Responsavel"]) || null;
+        const status = mapStatus(row["Status"]);
+
+        const dedupKey = `${dataEvento}::${descricao.slice(0, 200)}`;
+        const set = tramExistentes.get(proc.id);
+        if (set?.has(dedupKey)) {
+          tramitacoesIgnoradas++;
+          continue;
+        }
+
+        const { error } = await supabaseAdmin.from("tramitacoes").insert({
+          processo_id: proc.id,
+          descricao,
+          data_evento: dataEvento,
+          responsavel,
+          status_no_momento: status,
+          setor_orgao: null,
+          etapa_id: null,
+        });
+        if (error) throw new Error(error.message);
+
+        if (!set) tramExistentes.set(proc.id, new Set([dedupKey]));
+        else set.add(dedupKey);
+
+        // atualiza status do processo conforme a tramitação importada
+        await supabaseAdmin
+          .from("processos")
+          .update({ status, atualizado_em: new Date().toISOString() })
+          .eq("id", proc.id);
+
+        tramitacoesCriadas++;
+      } catch (e: any) {
+        erros.push({ linha, mensagem: e?.message ?? String(e) });
+      }
+    }
+
+    return {
+      totalLinhas: rows.length,
+      tramitacoesCriadas,
+      tramitacoesIgnoradas,
+      erros,
+    };
+  });
