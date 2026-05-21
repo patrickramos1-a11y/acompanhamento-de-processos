@@ -605,3 +605,223 @@ function SectionTitle({ icon, title }: { icon: React.ReactNode; title: string })
     </div>
   );
 }
+
+const STATUS_TABS = [
+  { key: "", label: "Todos" },
+  { key: "ativo", label: "Em análise pelo órgão" },
+  { key: "concluido", label: "Deferido" },
+  { key: "suspenso", label: "Notificado" },
+  { key: "cancelado", label: "Reprovado" },
+] as const;
+
+const STATUS_TAB_LABEL: Record<string, string> = {
+  ativo: "Em análise pelo órgão",
+  concluido: "Deferido",
+  suspenso: "Notificado",
+  cancelado: "Reprovado",
+};
+
+function EmpresaProcessosModal({
+  empresaId,
+  onClose,
+  statusFiltro,
+  setStatusFiltro,
+  empresas,
+  grupos,
+  tipos,
+  etapas,
+  etapasByTipo,
+  processos,
+  isParado,
+}: {
+  empresaId: string | null;
+  onClose: () => void;
+  statusFiltro: string;
+  setStatusFiltro: (s: string) => void;
+  empresas: any[];
+  grupos: Map<string, any>;
+  tipos: Map<string, any>;
+  etapas: Map<string, any>;
+  etapasByTipo: Map<string, any[]>;
+  processos: any[];
+  isParado: (p: any) => boolean;
+}) {
+  const empresa = empresaId ? empresas.find((e) => e.id === empresaId) : null;
+  const grupo = empresa?.grupo_id ? grupos.get(empresa.grupo_id) : null;
+  const procs = useMemo(
+    () => (empresaId ? processos.filter((p) => p.empresa_id === empresaId) : []),
+    [processos, empresaId],
+  );
+  const procsFiltrados = useMemo(
+    () => (statusFiltro ? procs.filter((p) => p.status === statusFiltro) : procs),
+    [procs, statusFiltro],
+  );
+  const counts = useMemo(() => {
+    const m: Record<string, number> = { "": procs.length };
+    for (const p of procs) m[p.status] = (m[p.status] ?? 0) + 1;
+    return m;
+  }, [procs]);
+
+  return (
+    <Dialog open={!!empresaId} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-[1100px] p-0">
+        <DialogHeader className="border-b border-border bg-sidebar px-6 py-4 text-sidebar-foreground">
+          <DialogTitle className="flex items-center gap-2 text-base">
+            <Building2 className="h-4 w-4" />
+            {empresa?.nome ?? "Empresa"}
+          </DialogTitle>
+          <DialogDescription className="text-sidebar-foreground/70">
+            {grupo ? grupo.nome + " · " : ""}
+            {procs.length} processo{procs.length !== 1 ? "s" : ""} no total
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="border-b border-border bg-muted/30 px-6 py-3">
+          <div className="flex flex-wrap gap-2">
+            {STATUS_TABS.map((tab) => {
+              const active = statusFiltro === tab.key;
+              const count = counts[tab.key] ?? 0;
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => setStatusFiltro(tab.key)}
+                  className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                    active
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-border bg-background text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {tab.label}
+                  <span
+                    className={`rounded-full px-1.5 py-0.5 text-[10px] tabular-nums ${
+                      active ? "bg-primary-foreground/20" : "bg-muted"
+                    }`}
+                  >
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="max-h-[60vh] overflow-auto">
+          <table className="w-full text-sm">
+            <thead className="sticky top-0 bg-sidebar text-sidebar-foreground">
+              <tr className="text-left">
+                <Th>Tipo</Th>
+                <Th>Processo</Th>
+                <Th>Protocolo</Th>
+                <Th>Data</Th>
+                <Th>Etapa atual</Th>
+                <Th>Status</Th>
+                <Th>Responsável</Th>
+                <Th>Progresso</Th>
+              </tr>
+            </thead>
+            <tbody>
+              {procsFiltrados.length === 0 && (
+                <tr>
+                  <td colSpan={8} className="px-4 py-12 text-center text-muted-foreground">
+                    Nenhum processo nesta categoria.
+                  </td>
+                </tr>
+              )}
+              {procsFiltrados.map((p) => {
+                const tipo = tipos.get(p.tipo_processo_id);
+                const etapaAtual = p.etapa_atual_id ? etapas.get(p.etapa_atual_id) : null;
+                const etapasDoTipo = etapasByTipo.get(p.tipo_processo_id) ?? [];
+                const idxAtual = etapaAtual
+                  ? etapasDoTipo.findIndex((e: any) => e.id === etapaAtual.id)
+                  : -1;
+                const total = etapasDoTipo.length;
+                const progresso =
+                  p.status === "concluido"
+                    ? 100
+                    : total > 0 && idxAtual >= 0
+                      ? ((idxAtual + 1) / total) * 100
+                      : 0;
+                const parado = isParado(p);
+                const statusLabel = STATUS_TAB_LABEL[p.status] ?? p.status;
+                return (
+                  <tr key={p.id} className="border-t border-border hover:bg-muted/40">
+                    <td className="px-4 py-3 text-muted-foreground">{tipo?.nome ?? "—"}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-card-foreground">{p.nome}</span>
+                        {parado && (
+                          <span title="Parado há mais de 30 dias">
+                            <AlertTriangle className="h-3.5 w-3.5 text-warning" />
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
+                      {p.numero_protocolo ?? "—"}
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground">
+                      {p.data_protocolo
+                        ? format(parseISO(p.data_protocolo), "dd/MM/yyyy", { locale: ptBR })
+                        : "—"}
+                    </td>
+                    <td className="px-4 py-3">
+                      {etapaAtual ? (
+                        <span
+                          className="inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-medium"
+                          style={{
+                            borderColor: etapaAtual.cor + "55",
+                            background: etapaAtual.cor + "1a",
+                            color: etapaAtual.cor,
+                          }}
+                        >
+                          <span
+                            className="h-1.5 w-1.5 rounded-full"
+                            style={{ background: etapaAtual.cor }}
+                          />
+                          {etapaAtual.nome}
+                        </span>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${STATUS_CLASS[p.status]}`}
+                      >
+                        {statusLabel}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground">{p.responsavel ?? "—"}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <div className="h-1.5 w-24 overflow-hidden rounded-full bg-muted">
+                          <div
+                            className="h-full rounded-full transition-all"
+                            style={{
+                              width: `${progresso}%`,
+                              background:
+                                p.status === "concluido"
+                                  ? "var(--success)"
+                                  : etapaAtual?.cor ?? "var(--primary)",
+                            }}
+                          />
+                        </div>
+                        <span className="text-[10px] tabular-nums text-muted-foreground">
+                          {idxAtual >= 0 && total > 0
+                            ? `${idxAtual + 1}/${total}`
+                            : p.status === "concluido"
+                              ? `${total}/${total}`
+                              : "—"}
+                        </span>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
