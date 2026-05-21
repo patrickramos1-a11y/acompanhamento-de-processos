@@ -1,22 +1,63 @@
 ## Objetivo
-Fazer a importação de processos funcionar de verdade na aba de configurações e mostrar mensagens claras de sucesso ou erro para o usuário.
 
-## O que vou corrigir
-1. Ajustar a tela de configurações para garantir que a seleção de arquivo e o clique no botão disparem a ação corretamente.
-2. Corrigir a função de importação para evitar falhas de runtime ligadas ao uso do parser de planilha no carregamento do servidor.
-3. Garantir feedback visual completo: carregando, sucesso, erro geral e erros por linha da planilha.
-4. Validar o fluxo final no preview para confirmar que o botão responde e que erros aparecem na interface.
+Permitir importar uma planilha de "Acompanhamento de processos" em Configurações, criando registros em `tramitacoes` vinculados automaticamente aos `processos` já cadastrados (importados anteriormente).
 
-## Detalhes técnicos
-- Revisar `src/routes/configuracoes.tsx` para reforçar o fluxo do arquivo selecionado, estado de loading e exibição de mensagens.
-- Revisar `src/lib/import.functions.ts` para mover o carregamento do `xlsx` para dentro do handler da server function, evitando quebra de SSR/import graph.
-- Adicionar/confirmar o componente global de toast no root (`src/routes/__root.tsx`), porque hoje o código chama `toast.*`, mas o app não parece ter o toaster montado.
-- Manter a regra automática de conversão de status `Em análise pela Ramos` para `Análise pelo órgão`.
-- Validar o comportamento após a correção reproduzindo a ação de importação e verificando logs/resultado.
+## Planilha de entrada
 
-## Resultado esperado
-- Ao escolher um arquivo, o nome dele aparece na tela.
-- Ao clicar em `Importar processos`, o botão entra em estado de carregamento.
-- Se der certo, o sistema mostra confirmação e resumo da importação.
-- Se der erro, o sistema mostra a mensagem na tela e em toast, sem ficar “sem acontecer nada”.
-- A importação volta a funcionar com a planilha enviada.
+Aba `data`, colunas detectadas:
+
+- Empresa
+- Grupo Empresarial
+- Tipo de processo
+- Nº do processo
+- Status (ex.: ANALISE_ORGAO, DEFERIDO, etc.)
+- Descrição
+- Data (dd/MM/yyyy)
+- Responsável
+
+## Regra de vinculação (automática)
+
+Para cada linha, encontrar o `processo_id` na seguinte ordem:
+
+1. Buscar empresa por nome (case/acento-insensível). Se não existir → erro na linha "Empresa não encontrada".
+2. Match do processo dentro dessa empresa:
+   - a) `numero_protocolo` igual ao "Nº do processo" da linha; senão
+   - b) `nome` igual ao "Nº do processo" (cobre processos internos cujo "número" é descritivo); senão
+   - c) se existir apenas 1 processo da empresa com o mesmo "Tipo de processo", usa esse; senão
+   - d) erro "Processo não encontrado" (linha vira pendência, não cria processo novo — assim mantém a base limpa).
+
+Não cria empresas/grupos/tipos novos nesta importação — esta planilha é só de acompanhamento.
+
+## Inserção em `tramitacoes`
+
+Campos preenchidos por linha:
+
+- `processo_id` → do match acima
+- `descricao` → coluna Descrição (obrigatória; se vazia, erro)
+- `data_evento` → Data parseada (default hoje se vazia)
+- `responsavel` → Responsável
+- `status_no_momento` → mapeado para enum existente (`ANALISE_ORGAO` → `ativo`, `DEFERIDO` → `concluido`, `INDEFERIDO`/`REPROVADO` → `cancelado`, `NOTIFICADO` → `suspenso`)
+- `setor_orgao` → null (não está na planilha)
+- `etapa_id` → null
+
+Deduplicação: se já existir uma tramitação com mesmo `processo_id` + `data_evento` + primeiros 200 chars de `descricao`, pula (idempotente para reimportações).
+
+Após inserir, atualiza `processos.status` e `processos.atualizado_em` para refletir a tramitação mais recente.
+
+## Mudanças no código
+
+1. **`src/lib/import.functions.ts`** — adicionar `importAcompanhamentos` (novo `createServerFn`) reutilizando os helpers de parse de data e normalização. Retorna: `{ totalLinhas, tramitacoesCriadas, tramitacoesIgnoradas, erros[] }`.
+
+2. **`src/routes/configuracoes.tsx`** — adicionar um segundo card "Importar acompanhamentos de processos" abaixo do card existente, com o mesmo padrão de UX (botão único que abre o seletor, toast, resumo, lista de erros). Texto explicando que os acompanhamentos são vinculados automaticamente aos processos pelo nome da empresa + nº do processo.
+
+3. **Modal de empresa em `src/routes/index.tsx`** — já lista tramitações por processo via dados existentes; sem mudanças necessárias além de garantir que a invalidação de cache (`queryClient.invalidateQueries`) inclua as tramitações após a importação.
+
+Nenhuma alteração de schema é necessária — a tabela `tramitacoes` já suporta tudo.
+
+## Saída para o usuário
+
+Após importar, mostra:
+
+- N tramitações criadas
+- N ignoradas (duplicadas)
+- Lista de linhas com erro (empresa não encontrada, processo não encontrado, descrição vazia) com o nº da linha original para correção.
