@@ -517,7 +517,22 @@ function Painel() {
       <footer className="border-t border-border py-6 text-center text-xs text-muted-foreground">
         Plataforma de acompanhamento de processos administrativos
       </footer>
+
+      <EmpresaProcessosModal
+        empresaId={empresaModal}
+        onClose={() => setEmpresaModal(null)}
+        statusFiltro={modalStatusFiltro}
+        setStatusFiltro={setModalStatusFiltro}
+        empresas={empresas}
+        grupos={grupoMap}
+        tipos={tipoMap}
+        etapas={etapaMap}
+        etapasByTipo={etapasByTipo}
+        processos={processos}
+        isParado={isParado}
+      />
     </div>
+
   );
 }
 
