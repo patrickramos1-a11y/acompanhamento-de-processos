@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery, queryOptions } from "@tanstack/react-query";
 import { getDashboard } from "@/lib/dashboard.functions";
 import { useMemo, useState } from "react";
@@ -20,6 +20,7 @@ import {
   Search,
   Clock,
   TrendingUp,
+  Settings,
 } from "lucide-react";
 
 const dashboardQuery = queryOptions({
@@ -159,7 +160,7 @@ function Painel() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b border-border bg-sidebar text-sidebar-foreground">
-        <div className="mx-auto max-w-[1400px] px-6 py-5">
+        <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-4 px-6 py-5">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground">
               <FileText className="h-5 w-5" />
@@ -173,6 +174,13 @@ function Painel() {
               </p>
             </div>
           </div>
+          <Link
+            to="/configuracoes"
+            className="inline-flex items-center gap-2 rounded-md border border-sidebar-foreground/20 px-3 py-1.5 text-sm text-sidebar-foreground hover:bg-sidebar-foreground/10"
+          >
+            <Settings className="h-4 w-4" />
+            Configurações
+          </Link>
         </div>
       </header>
 
