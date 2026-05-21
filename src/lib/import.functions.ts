@@ -51,14 +51,16 @@ function mapStatus(raw: unknown): "ativo" | "concluido" | "cancelado" | "suspens
 
 export const importProcessos = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => {
-    if (!(input instanceof FormData)) throw new Error("FormData esperado");
-    const file = input.get("file");
-    if (!(file instanceof File)) throw new Error("Arquivo não enviado");
-    return { file };
+    if (!input || typeof input !== "object") throw new Error("Payload inválido");
+    const i = input as { fileBase64?: unknown; fileName?: unknown };
+    if (typeof i.fileBase64 !== "string" || !i.fileBase64) {
+      throw new Error("Arquivo não enviado");
+    }
+    return { fileBase64: i.fileBase64, fileName: typeof i.fileName === "string" ? i.fileName : "upload.xlsx" };
   })
   .handler(async ({ data }) => {
-    const buf = await data.file.arrayBuffer();
-    const wb = XLSX.read(buf, { type: "array", cellDates: true });
+    const bin = Buffer.from(data.fileBase64, "base64");
+    const wb = XLSX.read(bin, { type: "buffer", cellDates: true });
     const sheetName =
       wb.SheetNames.find((n) => n.toLowerCase() === "data") ?? wb.SheetNames[0];
     const sheet = wb.Sheets[sheetName];
