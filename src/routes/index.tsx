@@ -20,6 +20,7 @@ import {
   Search,
   Clock,
   TrendingUp,
+  Settings,
 } from "lucide-react";
 
 const dashboardQuery = queryOptions({
