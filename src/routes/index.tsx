@@ -540,6 +540,17 @@ function Painel() {
         etapasByTipo={etapasByTipo}
         processos={processos}
         isParado={isParado}
+        onAbrirProcesso={(id) => setProcessoModal(id)}
+      />
+
+      <ProcessoTramitacoesModal
+        processoId={processoModal}
+        onClose={() => setProcessoModal(null)}
+        processos={processos}
+        empresaMap={empresaMap}
+        tipoMap={tipoMap}
+        etapaMap={etapaMap}
+        tramitacoes={tramitacoes}
       />
     </div>
 
