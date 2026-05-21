@@ -421,7 +421,7 @@ function Painel() {
                           <span
                             className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${STATUS_CLASS[p.status]}`}
                           >
-                            {STATUS_LABEL[p.status]}
+                            {p.status_detalhado ?? STATUS_LABEL[p.status]}
                           </span>
                         </td>
                         <td className="px-4 py-3 text-muted-foreground">{p.responsavel ?? "—"}</td>
