@@ -485,7 +485,10 @@ function Painel() {
               {ultimasTramitacoes.map((t) => {
                 const proc = processos.find((p) => p.id === t.processo_id);
                 const empresa = proc ? empresaMap.get(proc.empresa_id) : null;
+                const tipo = proc ? tipoMap.get(proc.tipo_processo_id) : null;
                 const etapa = t.etapa_id ? etapaMap.get(t.etapa_id) : null;
+                const statusAtual = proc?.status;
+                const statusLabel = statusAtual ? STATUS_TAB_LABEL[statusAtual] ?? statusAtual : null;
                 return (
                   <li key={t.id} className="flex gap-4 px-4 py-3 hover:bg-muted/40">
                     <div className="w-24 shrink-0 text-xs text-muted-foreground">
@@ -498,6 +501,18 @@ function Painel() {
                         </span>
                         <span className="text-xs text-muted-foreground">·</span>
                         <span className="text-xs text-muted-foreground">{proc?.nome}</span>
+                        {tipo && (
+                          <span className="inline-flex items-center rounded-full border border-border bg-muted/60 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                            {tipo.nome}
+                          </span>
+                        )}
+                        {statusLabel && (
+                          <span
+                            className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px] font-medium ${STATUS_CLASS[statusAtual!] ?? ""}`}
+                          >
+                            {statusLabel}
+                          </span>
+                        )}
                         {etapa && (
                           <span
                             className="inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium"
