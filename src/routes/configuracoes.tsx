@@ -36,20 +36,39 @@ function ConfiguracoesPage() {
   const inputRef = useRef<HTMLInputElement>(null);
 
   async function handleImportar() {
-    if (!file) return;
+    if (!file) {
+      toast.error("Selecione um arquivo .xlsx primeiro");
+      return;
+    }
     setLoading(true);
     setErroGeral(null);
     setResultado(null);
     try {
-      const fd = new FormData();
-      fd.append("file", file);
-      const res = await importar({ data: fd });
+      const buf = await file.arrayBuffer();
+      // converte para base64 em chunks (evita stack overflow em arquivos grandes)
+      let binary = "";
+      const bytes = new Uint8Array(buf);
+      const chunk = 0x8000;
+      for (let i = 0; i < bytes.length; i += chunk) {
+        binary += String.fromCharCode.apply(
+          null,
+          Array.from(bytes.subarray(i, i + chunk)),
+        );
+      }
+      const fileBase64 = btoa(binary);
+      const res = await importar({ data: { fileBase64, fileName: file.name } });
       setResultado(res);
+      toast.success(
+        `Importação concluída: ${res.processosCriados} criado(s), ${res.processosAtualizados} atualizado(s)`,
+      );
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       setFile(null);
       if (inputRef.current) inputRef.current.value = "";
     } catch (e: any) {
-      setErroGeral(e?.message ?? "Falha na importação");
+      console.error("Erro na importação:", e);
+      const msg = e?.message ?? "Falha na importação";
+      setErroGeral(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
