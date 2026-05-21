@@ -654,6 +654,7 @@ function EmpresaProcessosModal({
   etapasByTipo,
   processos,
   isParado,
+  onAbrirProcesso,
 }: {
   empresaId: string | null;
   onClose: () => void;
@@ -666,6 +667,7 @@ function EmpresaProcessosModal({
   etapasByTipo: Map<string, any[]>;
   processos: any[];
   isParado: (p: any) => boolean;
+  onAbrirProcesso: (id: string) => void;
 }) {
   const empresa = empresaId ? empresas.find((e) => e.id === empresaId) : null;
   const grupo = empresa?.grupo_id ? grupos.get(empresa.grupo_id) : null;
