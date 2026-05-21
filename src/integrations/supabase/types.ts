@@ -117,6 +117,7 @@ export type Database = {
           numero_protocolo: string | null
           responsavel: string | null
           status: Database["public"]["Enums"]["processo_status"]
+          status_detalhado: string | null
           tipo_processo_id: string
         }
         Insert: {
@@ -130,6 +131,7 @@ export type Database = {
           numero_protocolo?: string | null
           responsavel?: string | null
           status?: Database["public"]["Enums"]["processo_status"]
+          status_detalhado?: string | null
           tipo_processo_id: string
         }
         Update: {
@@ -143,6 +145,7 @@ export type Database = {
           numero_protocolo?: string | null
           responsavel?: string | null
           status?: Database["public"]["Enums"]["processo_status"]
+          status_detalhado?: string | null
           tipo_processo_id?: string
         }
         Relationships: [

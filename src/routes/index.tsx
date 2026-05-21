@@ -421,7 +421,7 @@ function Painel() {
                           <span
                             className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${STATUS_CLASS[p.status]}`}
                           >
-                            {STATUS_LABEL[p.status]}
+                            {p.status_detalhado ?? STATUS_LABEL[p.status]}
                           </span>
                         </td>
                         <td className="px-4 py-3 text-muted-foreground">{p.responsavel ?? "—"}</td>
@@ -468,7 +468,7 @@ function Painel() {
                 const tipo = proc ? tipoMap.get(proc.tipo_processo_id) : null;
                 const etapa = t.etapa_id ? etapaMap.get(t.etapa_id) : null;
                 const statusAtual = proc?.status;
-                const statusLabel = statusAtual ? STATUS_TAB_LABEL[statusAtual] ?? statusAtual : null;
+                const statusLabel = proc?.status_detalhado ?? (statusAtual ? STATUS_TAB_LABEL[statusAtual] ?? statusAtual : null);
                 return (
                   <li key={t.id} className="flex gap-4 px-4 py-3 hover:bg-muted/40">
                     <div className="w-24 shrink-0 text-xs text-muted-foreground">
@@ -760,7 +760,7 @@ function EmpresaProcessosModal({
                       ? ((idxAtual + 1) / total) * 100
                       : 0;
                 const parado = isParado(p);
-                const statusLabel = STATUS_TAB_LABEL[p.status] ?? p.status;
+                const statusLabel = p.status_detalhado ?? STATUS_TAB_LABEL[p.status] ?? p.status;
                 return (
                   <tr
                     key={p.id}

@@ -180,6 +180,7 @@ export const importProcessos = createServerFn({ method: "POST" })
           `${norm(row["Tipo de Processo"]) || "Processo"} — ${empresaNome}`;
         const dataProtocolo = parseDate(row["Data do Protocolo"]);
         const status = mapStatus(row["Status"]);
+        const statusDetalhado = norm(row["Status"]) || null;
         const responsavel = norm(row["Responsável"]) || null;
 
         // upsert por (empresa_id, numero_protocolo) se houver, senão por (empresa_id, nome)
@@ -210,6 +211,7 @@ export const importProcessos = createServerFn({ method: "POST" })
           numero_protocolo: numero,
           data_protocolo: dataProtocolo,
           status,
+          status_detalhado: statusDetalhado,
           responsavel,
         };
 
@@ -368,6 +370,7 @@ export const importAcompanhamentos = createServerFn({ method: "POST" })
         const dataEvento = parseDate(row["Data"]) ?? hoje;
         const responsavel = norm(row["Responsável"]) || norm(row["Responsavel"]) || null;
         const status = mapStatus(row["Status"]);
+        const statusDetalhado = norm(row["Status"]) || null;
 
         const dedupKey = `${dataEvento}::${descricao.slice(0, 200)}`;
         const set = tramExistentes.get(proc.id);
@@ -393,7 +396,11 @@ export const importAcompanhamentos = createServerFn({ method: "POST" })
         // atualiza status do processo conforme a tramitação importada
         await supabaseAdmin
           .from("processos")
-          .update({ status, atualizado_em: new Date().toISOString() })
+          .update({
+            status,
+            status_detalhado: statusDetalhado,
+            atualizado_em: new Date().toISOString(),
+          })
           .eq("id", proc.id);
 
         tramitacoesCriadas++;
