@@ -21,6 +21,7 @@ import {
   Clock,
   TrendingUp,
   Settings,
+  ClipboardList,
 } from "lucide-react";
 
 const dashboardQuery = queryOptions({
