@@ -740,12 +740,13 @@ function EmpresaProcessosModal({
                 <Th>Status</Th>
                 <Th>Responsável</Th>
                 <Th>Progresso</Th>
+                <Th>Ações</Th>
               </tr>
             </thead>
             <tbody>
               {procsFiltrados.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-4 py-12 text-center text-muted-foreground">
+                  <td colSpan={9} className="px-4 py-12 text-center text-muted-foreground">
                     Nenhum processo nesta categoria.
                   </td>
                 </tr>
