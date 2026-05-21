@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
-import * as XLSX from "xlsx";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
 
 type Row = Record<string, unknown>;
 
@@ -59,6 +59,7 @@ export const importProcessos = createServerFn({ method: "POST" })
     return { fileBase64: i.fileBase64, fileName: typeof i.fileName === "string" ? i.fileName : "upload.xlsx" };
   })
   .handler(async ({ data }) => {
+    const XLSX = await import("xlsx");
     const bin = Buffer.from(data.fileBase64, "base64");
     const wb = XLSX.read(bin, { type: "buffer", cellDates: true });
     const sheetName =
