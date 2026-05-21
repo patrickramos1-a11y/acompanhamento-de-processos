@@ -21,6 +21,7 @@ import {
   Clock,
   TrendingUp,
   Settings,
+  ClipboardList,
 } from "lucide-react";
 
 const dashboardQuery = queryOptions({
@@ -75,6 +76,7 @@ function Painel() {
   const [statusFiltro, setStatusFiltro] = useState<string>("");
   const [tipoFiltro, setTipoFiltro] = useState<string>("");
   const [empresaModal, setEmpresaModal] = useState<string | null>(null);
+  const [processoModal, setProcessoModal] = useState<string | null>(null);
   const [modalStatusFiltro, setModalStatusFiltro] = useState<string>("");
 
   const empresaMap = useMemo(() => new Map(empresas.map((e) => [e.id, e])), [empresas]);
@@ -538,6 +540,17 @@ function Painel() {
         etapasByTipo={etapasByTipo}
         processos={processos}
         isParado={isParado}
+        onAbrirProcesso={(id) => setProcessoModal(id)}
+      />
+
+      <ProcessoTramitacoesModal
+        processoId={processoModal}
+        onClose={() => setProcessoModal(null)}
+        processos={processos}
+        empresaMap={empresaMap}
+        tipoMap={tipoMap}
+        etapaMap={etapaMap}
+        tramitacoes={tramitacoes}
       />
     </div>
 
@@ -641,6 +654,7 @@ function EmpresaProcessosModal({
   etapasByTipo,
   processos,
   isParado,
+  onAbrirProcesso,
 }: {
   empresaId: string | null;
   onClose: () => void;
@@ -653,6 +667,7 @@ function EmpresaProcessosModal({
   etapasByTipo: Map<string, any[]>;
   processos: any[];
   isParado: (p: any) => boolean;
+  onAbrirProcesso: (id: string) => void;
 }) {
   const empresa = empresaId ? empresas.find((e) => e.id === empresaId) : null;
   const grupo = empresa?.grupo_id ? grupos.get(empresa.grupo_id) : null;
@@ -725,12 +740,13 @@ function EmpresaProcessosModal({
                 <Th>Status</Th>
                 <Th>Responsável</Th>
                 <Th>Progresso</Th>
+                <Th>Ações</Th>
               </tr>
             </thead>
             <tbody>
               {procsFiltrados.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-4 py-12 text-center text-muted-foreground">
+                  <td colSpan={9} className="px-4 py-12 text-center text-muted-foreground">
                     Nenhum processo nesta categoria.
                   </td>
                 </tr>
@@ -752,7 +768,11 @@ function EmpresaProcessosModal({
                 const parado = isParado(p);
                 const statusLabel = STATUS_TAB_LABEL[p.status] ?? p.status;
                 return (
-                  <tr key={p.id} className="border-t border-border hover:bg-muted/40">
+                  <tr
+                    key={p.id}
+                    onClick={() => onAbrirProcesso(p.id)}
+                    className="cursor-pointer border-t border-border hover:bg-muted/40"
+                  >
                     <td className="px-4 py-3 text-muted-foreground">{tipo?.nome ?? "—"}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
@@ -823,11 +843,126 @@ function EmpresaProcessosModal({
                         </span>
                       </div>
                     </td>
+                    <td className="px-4 py-3">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onAbrirProcesso(p.id);
+                        }}
+                        className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2 py-1 text-xs font-medium text-foreground hover:bg-muted"
+                      >
+                        <ClipboardList className="h-3.5 w-3.5" />
+                        Ver acompanhamentos
+                      </button>
+                    </td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function ProcessoTramitacoesModal({
+  processoId,
+  onClose,
+  processos,
+  empresaMap,
+  tipoMap,
+  etapaMap,
+  tramitacoes,
+}: {
+  processoId: string | null;
+  onClose: () => void;
+  processos: any[];
+  empresaMap: Map<string, any>;
+  tipoMap: Map<string, any>;
+  etapaMap: Map<string, any>;
+  tramitacoes: any[];
+}) {
+  const processo = processoId ? processos.find((p) => p.id === processoId) : null;
+  const empresa = processo ? empresaMap.get(processo.empresa_id) : null;
+  const tipo = processo ? tipoMap.get(processo.tipo_processo_id) : null;
+  const tramsDoProcesso = useMemo(() => {
+    if (!processoId) return [];
+    return tramitacoes
+      .filter((t) => t.processo_id === processoId)
+      .slice()
+      .sort((a, b) => (a.data_evento < b.data_evento ? 1 : -1));
+  }, [tramitacoes, processoId]);
+
+  const statusLabel = processo ? STATUS_LABEL[processo.status] ?? processo.status : "";
+
+  return (
+    <Dialog open={!!processoId} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-[800px] p-0">
+        <DialogHeader className="border-b border-border bg-sidebar px-6 py-4 text-sidebar-foreground">
+          <DialogTitle className="flex items-center gap-2 text-base">
+            <ClipboardList className="h-4 w-4" />
+            Acompanhamentos do processo
+          </DialogTitle>
+          <DialogDescription className="text-sidebar-foreground/70">
+            {empresa?.nome ?? "—"} · {tipo?.nome ?? "—"} · {processo?.nome ?? ""}
+            {processo?.numero_protocolo ? ` · ${processo.numero_protocolo}` : ""}
+            {processo && (
+              <span
+                className={`ml-2 inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${STATUS_CLASS[processo.status]}`}
+              >
+                {statusLabel}
+              </span>
+            )}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="max-h-[65vh] overflow-auto">
+          {tramsDoProcesso.length === 0 ? (
+            <div className="px-6 py-12 text-center text-sm text-muted-foreground">
+              Nenhum acompanhamento registrado para este processo.
+            </div>
+          ) : (
+            <ul className="divide-y divide-border">
+              {tramsDoProcesso.map((t) => {
+                const etapa = t.etapa_id ? etapaMap.get(t.etapa_id) : null;
+                return (
+                  <li key={t.id} className="flex gap-4 px-6 py-4 hover:bg-muted/30">
+                    <div className="w-24 shrink-0 text-xs text-muted-foreground">
+                      {fmtDate(t.data_evento)}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        {etapa && (
+                          <span
+                            className="inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium"
+                            style={{
+                              background: etapa.cor + "1a",
+                              color: etapa.cor,
+                            }}
+                          >
+                            {etapa.nome}
+                          </span>
+                        )}
+                        {t.status_no_momento && (
+                          <span
+                            className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px] font-medium ${STATUS_CLASS[t.status_no_momento] ?? ""}`}
+                          >
+                            {STATUS_LABEL[t.status_no_momento] ?? t.status_no_momento}
+                          </span>
+                        )}
+                      </div>
+                      <p className="mt-1 text-sm text-card-foreground">{t.descricao}</p>
+                      <div className="mt-1 text-xs text-muted-foreground">
+                        {t.responsavel ?? "—"}
+                        {t.setor_orgao ? ` · ${t.setor_orgao}` : ""}
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </div>
       </DialogContent>
     </Dialog>
