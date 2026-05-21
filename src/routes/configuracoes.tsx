@@ -30,40 +30,25 @@ type Resultado = Awaited<ReturnType<typeof importProcessos>>;
 function ConfiguracoesPage() {
   const importar = useServerFn(importProcessos);
   const queryClient = useQueryClient();
-  const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [resultado, setResultado] = useState<Resultado | null>(null);
   const [erroGeral, setErroGeral] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  async function handleImportar() {
-    if (!file) {
-      toast.error("Selecione um arquivo .xlsx primeiro");
-      return;
-    }
+  async function handleImportarArquivo(file: File | null) {
+    if (!file) return;
     setLoading(true);
     setErroGeral(null);
     setResultado(null);
     try {
-      const buf = await file.arrayBuffer();
-      // converte para base64 em chunks (evita stack overflow em arquivos grandes)
-      let binary = "";
-      const bytes = new Uint8Array(buf);
-      const chunk = 0x8000;
-      for (let i = 0; i < bytes.length; i += chunk) {
-        binary += String.fromCharCode.apply(
-          null,
-          Array.from(bytes.subarray(i, i + chunk)),
-        );
-      }
-      const fileBase64 = btoa(binary);
-      const res = await importar({ data: { fileBase64, fileName: file.name } });
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await importar({ data: formData });
       setResultado(res);
       toast.success(
         `Importação concluída: ${res.processosCriados} criado(s), ${res.processosAtualizados} atualizado(s)`,
       );
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-      setFile(null);
       if (inputRef.current) inputRef.current.value = "";
     } catch (e: any) {
       console.error("Erro na importação:", e);
@@ -73,6 +58,11 @@ function ConfiguracoesPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function abrirSeletorArquivo() {
+    if (loading) return;
+    inputRef.current?.click();
   }
 
   return (
@@ -124,29 +114,18 @@ function ConfiguracoesPage() {
               </p>
 
               <div className="mt-5 flex flex-wrap items-center gap-3">
-                <label
-                  htmlFor="file-input"
-                  className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-input bg-background px-4 py-2 text-sm hover:bg-muted"
-                >
-                  <Upload className="h-4 w-4" />
-                  {file ? "Trocar arquivo" : "Escolher arquivo"}
-                </label>
                 <input
                   id="file-input"
                   ref={inputRef}
                   type="file"
                   accept=".xlsx,.xls"
                   className="hidden"
-                  onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                  onChange={(e) => void handleImportarArquivo(e.target.files?.[0] ?? null)}
                 />
-                {file && (
-                  <span className="text-sm text-muted-foreground">
-                    {file.name} ({(file.size / 1024).toFixed(1)} KB)
-                  </span>
-                )}
                 <button
-                  onClick={handleImportar}
-                  disabled={!file || loading}
+                  type="button"
+                  onClick={abrirSeletorArquivo}
+                  disabled={loading}
                   className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
                 >
                   {loading ? (
@@ -156,6 +135,9 @@ function ConfiguracoesPage() {
                   )}
                   {loading ? "Importando..." : "Importar processos"}
                 </button>
+                <span className="text-sm text-muted-foreground">
+                  Clique no botão para escolher a planilha e iniciar a importação automaticamente.
+                </span>
               </div>
             </div>
           </div>
