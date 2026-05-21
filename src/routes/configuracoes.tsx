@@ -37,6 +37,13 @@ function ConfiguracoesPage() {
 
   async function handleImportarArquivo(file: File | null) {
     if (!file) return;
+    if (!/\.(xlsx|xls)$/i.test(file.name)) {
+      const msg = "Selecione uma planilha .xlsx ou .xls";
+      setErroGeral(msg);
+      toast.error(msg);
+      if (inputRef.current) inputRef.current.value = "";
+      return;
+    }
     setLoading(true);
     setErroGeral(null);
     setResultado(null);
@@ -49,19 +56,20 @@ function ConfiguracoesPage() {
         `Importação concluída: ${res.processosCriados} criado(s), ${res.processosAtualizados} atualizado(s)`,
       );
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-      if (inputRef.current) inputRef.current.value = "";
     } catch (e: any) {
       console.error("Erro na importação:", e);
       const msg = e?.message ?? "Falha na importação";
       setErroGeral(msg);
       toast.error(msg);
     } finally {
+      if (inputRef.current) inputRef.current.value = "";
       setLoading(false);
     }
   }
 
   function abrirSeletorArquivo() {
     if (loading) return;
+    if (inputRef.current) inputRef.current.value = "";
     inputRef.current?.click();
   }
 
