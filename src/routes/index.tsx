@@ -335,8 +335,8 @@ function Painel() {
           </div>
 
           {/* Filters */}
-          <div className="glass mb-4 flex flex-wrap items-center gap-1.5 rounded-xl p-2 shadow-sm">
-            <div className="relative min-w-[240px] flex-1">
+          <div className="glass mb-4 grid gap-2 rounded-xl p-2 shadow-sm sm:flex sm:flex-wrap sm:items-center sm:gap-1.5">
+            <div className="relative w-full sm:min-w-[240px] sm:flex-1">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
               <input
                 value={search}
