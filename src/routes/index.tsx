@@ -647,8 +647,8 @@ function Painel() {
                 const statusLabel = proc?.status_detalhado ?? (statusAtual ? STATUS_TAB_LABEL[statusAtual] ?? statusAtual : null);
                 const initial = (empresa?.nome ?? "—").trim().charAt(0).toUpperCase();
                 return (
-                  <li key={t.id} className="flex gap-4 px-4 py-3.5 transition-colors hover:bg-accent-soft/30">
-                    <div className="flex w-24 shrink-0 flex-col">
+                  <li key={t.id} className="flex gap-3 px-3 py-3.5 transition-colors hover:bg-accent-soft/30 sm:gap-4 sm:px-4">
+                    <div className="hidden w-24 shrink-0 flex-col sm:flex">
                       <span className="inline-flex w-fit items-center rounded-md bg-accent-soft px-2 py-0.5 text-[10px] font-semibold tabular-nums text-accent-foreground">
                         {fmtDate(t.data_evento)}
                       </span>
