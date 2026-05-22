@@ -657,6 +657,9 @@ function Painel() {
                       {initial}
                     </div>
                     <div className="min-w-0 flex-1">
+                      <div className="mb-0.5 text-[10px] font-semibold tabular-nums text-accent-foreground sm:hidden">
+                        {fmtDate(t.data_evento)}
+                      </div>
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="font-medium text-card-foreground">
                           {empresa?.nome ?? "—"}
