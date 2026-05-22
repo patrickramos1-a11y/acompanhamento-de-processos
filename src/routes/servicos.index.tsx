@@ -213,7 +213,7 @@ function ServicosPage() {
         {/* Filtros */}
         <section className="glass grid gap-2 rounded-xl p-3 sm:flex sm:flex-wrap sm:items-center sm:gap-2">
           <Select value={String(filterMonth)} onValueChange={(v) => setFilterMonth(Number(v))}>
-            <SelectTrigger className="h-9 w-[130px]"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="h-9 w-full sm:w-[130px]"><SelectValue /></SelectTrigger>
             <SelectContent>
               {MONTHS.map((m, i) => (
                 <SelectItem key={m} value={String(i)}>{m}</SelectItem>
@@ -221,7 +221,7 @@ function ServicosPage() {
             </SelectContent>
           </Select>
           <Select value={String(filterYear)} onValueChange={(v) => setFilterYear(Number(v))}>
-            <SelectTrigger className="h-9 w-[100px]"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="h-9 w-full sm:w-[100px]"><SelectValue /></SelectTrigger>
             <SelectContent>
               {anos.map((y) => (
                 <SelectItem key={y} value={String(y)}>{y}</SelectItem>
