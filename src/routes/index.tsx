@@ -193,36 +193,14 @@ function Painel() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Hero Header */}
-      <header className="relative overflow-hidden bg-gradient-hero text-sidebar-foreground">
-        <div className="absolute inset-0 bg-mesh opacity-80" aria-hidden="true" />
-        <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-sidebar-primary/50 to-transparent" />
-        <div className="relative mx-auto flex max-w-[1400px] items-center justify-between gap-4 px-6 py-7">
-          <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-accent text-accent-foreground shadow-accent-glow">
-              <FileText className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-sidebar-foreground/60">
-                Painel Institucional
-              </p>
-              <h1 className="font-display text-2xl font-bold tracking-tight">
-                Acompanhamento de Processos
-              </h1>
-              <p className="mt-0.5 text-xs text-sidebar-foreground/70">
-                Licenças, alvarás, anuências e tramitações junto a órgãos públicos
-              </p>
-            </div>
-          </div>
-          <Link
-            to="/configuracoes"
-            className="glass inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium text-sidebar-foreground transition-all hover:bg-white/15"
-          >
-            <Settings className="h-4 w-4" />
-            Configurações
-          </Link>
-        </div>
-      </header>
+      <AppHeader
+        current="painel"
+        eyebrow="Painel Institucional"
+        title="Acompanhamento de Processos"
+        subtitle="Licenças, alvarás, anuências e tramitações junto a órgãos públicos"
+        icon={<FileText className="h-5 w-5" />}
+      />
+
 
       <main className="mx-auto max-w-[1400px] space-y-10 px-6 py-10">
         {/* KPIs */}
