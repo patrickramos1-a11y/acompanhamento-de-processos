@@ -248,8 +248,13 @@ function Painel() {
                     <button
                       key={row.tipo.id}
                       onClick={() =>
-                        setTipoFiltro(tipoFiltro === row.tipo.id ? "" : row.tipo.id)
+                        setTipoFiltro((prev) =>
+                          prev.includes(row.tipo.id)
+                            ? prev.filter((x) => x !== row.tipo.id)
+                            : [...prev, row.tipo.id],
+                        )
                       }
+
                       className="w-full text-left"
                     >
                       <div className="flex items-center justify-between text-sm">
