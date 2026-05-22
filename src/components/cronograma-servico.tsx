@@ -94,7 +94,7 @@ function TarefaRow({
 
   return (
     <div
-      className={`flex items-center gap-3 rounded-lg border px-3 py-2.5 text-sm ${
+      className={`flex flex-col gap-2 rounded-lg border px-3 py-2.5 text-sm sm:flex-row sm:items-center sm:gap-3 ${
         t.status === "concluida"
           ? "border-success/30 bg-success/5"
           : isLate
@@ -104,36 +104,40 @@ function TarefaRow({
               : "border-border bg-card"
       }`}
     >
-      <TaskIcon status={t.status} isLate={isLate} />
-      <div className="flex-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className={`font-medium ${t.status === "concluida" ? "line-through opacity-60" : ""}`}>
-            {t.titulo}
-          </span>
-          {t.impacta_prazo && (
-            <Badge variant="outline" className="border-warning/40 text-[10px] text-warning-foreground">
-              impacta prazo
-            </Badge>
-          )}
-          {t.gerar_apos_conclusao && (
-            <Badge variant="outline" className="text-[10px]">gerar após</Badge>
-          )}
+      <div className="flex items-start gap-3 sm:flex-1">
+        <div className="mt-0.5 shrink-0 sm:mt-0">
+          <TaskIcon status={t.status} isLate={isLate} />
         </div>
-        <p className="mt-0.5 text-xs text-muted-foreground">
-          {t.duracao_dias}d • Previsão: {formatDate(t.data_prevista)}
-          {t.data_conclusao && ` • Concluída: ${formatDate(t.data_conclusao)}`}
-        </p>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className={`break-words font-medium ${t.status === "concluida" ? "line-through opacity-60" : ""}`}>
+              {t.titulo}
+            </span>
+            {t.impacta_prazo && (
+              <Badge variant="outline" className="border-warning/40 text-[10px] text-warning-foreground">
+                impacta prazo
+              </Badge>
+            )}
+            {t.gerar_apos_conclusao && (
+              <Badge variant="outline" className="text-[10px]">gerar após</Badge>
+            )}
+          </div>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            {t.duracao_dias}d • Previsão: {formatDate(t.data_prevista)}
+            {t.data_conclusao && ` • Concluída: ${formatDate(t.data_conclusao)}`}
+          </p>
+        </div>
       </div>
-      <div className="flex items-center gap-1">
+      <div className="flex shrink-0 flex-wrap items-center justify-end gap-1 sm:justify-start">
         {t.status === "pendente" && (
           <>
             <Popover>
               <PopoverTrigger asChild>
-                <Button size="sm" variant="ghost" title="Estender prazo">
+                <Button size="sm" variant="ghost" title="Estender prazo" className="h-8 w-8 p-0">
                   <CalendarPlus className="h-3.5 w-3.5" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-56 space-y-2 p-3">
+              <PopoverContent className="w-[min(calc(100vw-2rem),14rem)] space-y-2 p-3">
                 <p className="text-xs font-medium">Estender prazo</p>
                 <div className="flex gap-2">
                   <Input
@@ -147,14 +151,14 @@ function TarefaRow({
                 </div>
               </PopoverContent>
             </Popover>
-            <Button size="sm" onClick={onConcluir} className="h-7 gap-1">
+            <Button size="sm" onClick={onConcluir} className="h-8 gap-1">
               <Check className="h-3.5 w-3.5" />
-              Concluir
+              <span>Concluir</span>
             </Button>
           </>
         )}
         {t.status === "concluida" && (
-          <Button size="sm" variant="ghost" onClick={onReabrir} title="Reabrir">
+          <Button size="sm" variant="ghost" onClick={onReabrir} title="Reabrir" className="h-8 w-8 p-0">
             <RotateCcw className="h-3.5 w-3.5" />
           </Button>
         )}
