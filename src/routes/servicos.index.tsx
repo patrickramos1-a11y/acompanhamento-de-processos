@@ -69,7 +69,7 @@ const servicosDataQuery = queryOptions({
   queryFn: () => getServicosData(),
 });
 
-export const Route = createFileRoute("/servicos")({
+export const Route = createFileRoute("/servicos/")({
   head: () => ({
     meta: [
       { title: "Serviços — Acompanhamento de Processos" },
