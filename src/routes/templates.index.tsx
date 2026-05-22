@@ -1,4 +1,4 @@
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { createFileRoute, useRouter, Link } from "@tanstack/react-router";
 import { useSuspenseQuery, queryOptions } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -60,7 +60,7 @@ const servicosDataQuery = queryOptions({
   queryFn: () => getServicosData(),
 });
 
-export const Route = createFileRoute("/templates")({
+export const Route = createFileRoute("/templates/")({
   head: () => ({
     meta: [
       { title: "Templates — Acompanhamento de Processos" },
@@ -210,9 +210,11 @@ function TemplatesPage() {
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
-                  <Button variant="ghost" size="icon" onClick={() => setEditId(t.id)}>
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
+                  <Link to="/templates/$id" params={{ id: t.id }}>
+                    <Button variant="ghost" size="icon" title="Ver detalhe">
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </Link>
                 </div>
               </div>
             );
