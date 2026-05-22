@@ -1,0 +1,109 @@
+import { Check, ChevronDown, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { cn } from "@/lib/utils";
+
+export type Option = { value: string; label: string };
+
+type Props = {
+  label: string;
+  options: Option[];
+  selected: string[];
+  onChange: (next: string[]) => void;
+  searchPlaceholder?: string;
+  className?: string;
+};
+
+export function MultiSelect({
+  label,
+  options,
+  selected,
+  onChange,
+  searchPlaceholder,
+  className,
+}: Props) {
+  const toggle = (v: string) => {
+    onChange(selected.includes(v) ? selected.filter((x) => x !== v) : [...selected, v]);
+  };
+
+  const triggerText = (() => {
+    if (selected.length === 0) return label;
+    if (selected.length === 1) {
+      return options.find((o) => o.value === selected[0])?.label ?? label;
+    }
+    return `${selected.length} selecionados`;
+  })();
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          size="sm"
+          className={cn(
+            "h-8 justify-between gap-2 px-2.5 text-xs font-normal",
+            selected.length > 0 && "border-primary/50 bg-primary/5",
+            className,
+          )}
+        >
+          <span className="truncate">{triggerText}</span>
+          <ChevronDown className="h-3.5 w-3.5 shrink-0 opacity-60" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-56 p-0" align="start">
+        <Command>
+          <CommandInput placeholder={searchPlaceholder ?? "Buscar..."} className="h-9" />
+          <CommandList>
+            <CommandEmpty>Nada encontrado.</CommandEmpty>
+            <CommandGroup>
+              {options.map((opt) => {
+                const checked = selected.includes(opt.value);
+                return (
+                  <CommandItem
+                    key={opt.value}
+                    value={opt.label}
+                    onSelect={() => toggle(opt.value)}
+                    className="gap-2"
+                  >
+                    <div
+                      className={cn(
+                        "flex h-4 w-4 items-center justify-center rounded-sm border",
+                        checked
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-input",
+                      )}
+                    >
+                      {checked && <Check className="h-3 w-3" />}
+                    </div>
+                    <span className="truncate">{opt.label}</span>
+                  </CommandItem>
+                );
+              })}
+            </CommandGroup>
+          </CommandList>
+          {selected.length > 0 && (
+            <div className="border-t p-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 w-full justify-center text-xs"
+                onClick={() => onChange([])}
+              >
+                <X className="mr-1 h-3 w-3" />
+                Limpar
+              </Button>
+            </div>
+          )}
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}

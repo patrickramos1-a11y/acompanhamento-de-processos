@@ -1,36 +1,63 @@
-## Problema
+## Objetivo
 
-O layout atual usa `float` para o card "Processos por tipo", mas o container dos cards de empresa usa `display: grid`, que estabelece seu próprio contexto de formatação e **não envolve floats** — por isso fica o buraco vazio embaixo do gráfico.
+Transformar os 6 filtros (empresa, tipo, status, responsável, mês, ano) em **multi-select com busca**, mais compactos visualmente, com mês e ano atuais já marcados por padrão.
 
-## Solução
+## Mudanças
 
-Trocar o `float` por um **único CSS Grid de 3 colunas** que contém tudo (cards de empresa + card de tipos), posicionando o card de tipos explicitamente na coluna 3 e limitando sua altura em linhas. As empresas usam auto-placement com `grid-auto-flow: dense`, então elas ocupam todas as células livres — inclusive abaixo do card de tipos.
+### 1. Novo componente `src/components/multi-select.tsx`
 
-### Estrutura
+Componente reusável baseado em `Popover` + `Command` (já instalados — `cmdk` tem busca nativa). Props:
 
-```text
-┌─────────┬─────────┬─────────┐
-│ Empresa │ Empresa │  Tipos  │  ← linha 1-2: tipos ocupa col 3
-│ Empresa │ Empresa │ (chart) │
-├─────────┼─────────┼─────────┤
-│ Empresa │ Empresa │ Empresa │  ← linha 3+: empresas preenchem tudo
-│ Empresa │ Empresa │ Empresa │
-└─────────┴─────────┴─────────┘
+```ts
+type Option = { value: string; label: string };
+type Props = {
+  label: string;            // ex: "Responsáveis"
+  options: Option[];
+  selected: string[];
+  onChange: (next: string[]) => void;
+  searchPlaceholder?: string;
+  width?: string;           // ex: "w-44"
+};
 ```
 
-### Mudanças em `src/routes/index.tsx`
+**Comportamento:**
+- Trigger compacto: botão pequeno (`h-8`, `text-xs`) mostrando:
+  - `selected.length === 0` → "Todos" + label (ex: "Todos os responsáveis")
+  - `selected.length === 1` → label do item selecionado
+  - `selected.length > 1` → "N selecionados" + badge com contagem
+- Popover abre `CommandInput` (busca) + `CommandList` com `CommandItem` por opção, cada um com `Checkbox` à esquerda
+- Clicar em item alterna seleção sem fechar popover
+- Botão "Limpar" no rodapé do popover quando há seleções
 
-1. Remover a section atual com `float-right` e `clear-both`.
-2. Criar uma `<section>` única com:
-   - Título "Empresas" no topo (largura total) + título "Processos por tipo" como sub-header dentro do próprio card no canto superior direito (col 3).
-   - Container `grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 [grid-auto-flow:dense]`.
-   - Card de tipos com classes `xl:col-start-3 xl:row-span-2 xl:self-start` (ocupa col 3, linhas 1-2, alinhado ao topo).
-   - Cards de empresa auto-posicionados — com `dense` eles preenchem qualquer célula livre, inclusive linha 3+ na coluna 3.
-3. Em telas menores (`<xl`), o grid colapsa para 2 ou 1 coluna e o card de tipos vira um bloco normal no fluxo (sem posicionamento).
+### 2. Refatorar `src/routes/index.tsx`
 
-### Detalhes técnicos
+**Estado:** trocar os 6 `useState<string>` por `useState<string[]>`:
+```ts
+const [empresaFiltro, setEmpresaFiltro] = useState<string[]>([]);
+const [tipoFiltro, setTipoFiltro] = useState<string[]>([]);
+const [statusFiltro, setStatusFiltro] = useState<string[]>([]);
+const [responsavelFiltro, setResponsavelFiltro] = useState<string[]>([]);
+const mesAtual = String(new Date().getMonth() + 1).padStart(2, "0");
+const anoAtual = String(new Date().getFullYear());
+const [mesFiltro, setMesFiltro] = useState<string[]>([mesAtual]);
+const [anoFiltro, setAnoFiltro] = useState<string[]>([anoAtual]);
+```
 
-- Os títulos de seção ("Empresas" / "Processos por tipo") ficam dentro dos próprios cards/áreas para não quebrar o grid.
-- `row-span-2` no card de tipos garante altura suficiente para o `max-h-72` interno com scroll já existente.
-- `grid-auto-flow: dense` é essencial — sem ele, o auto-placement deixa buracos quando empresas têm tamanho diferente do slot disponível.
-- Sem mudanças em dados, server functions ou outros componentes.
+**Lógica de filtro** em `processosFiltrados`: trocar `if (X && p.x !== X)` por `if (X.length && !X.includes(p.x))` em cada campo. Para mês/ano usar `p.data_protocolo.slice(0,4)` e `.slice(5,7)`.
+
+**UI dos filtros:** trocar os 6 `<select>` por 6 `<MultiSelect>` numa linha mais densa:
+- Container: `flex flex-wrap items-center gap-1.5 rounded-lg border bg-card p-2`
+- Search input fica compacto: `h-8 text-xs`
+- Cada `MultiSelect` com largura própria adequada ao conteúdo
+- Botão "Limpar filtros" aparece quando qualquer filtro difere do default (incluindo mês/ano ≠ atual)
+
+### 3. Outros detalhes
+
+- `setTipoFiltro` é chamado no card "Processos por tipo" (toggle de 1 item) — atualizar para `setTipoFiltro(prev => prev.includes(id) ? prev.filter(x=>x!==id) : [...prev, id])`.
+- Botão "Limpar filtros" reseta tudo para arrays vazios, **exceto** mês/ano que voltam para `[mesAtual]` e `[anoAtual]` (manter o default consistente). Alternativa: limpar tudo de verdade — confirmo abaixo.
+
+## Detalhes técnicos
+
+- Reaproveitamos `Popover`, `Command`, `Checkbox`, `Badge`, `Button` de `src/components/ui/*` (já existem).
+- Sem mudanças em backend, schema ou rotas.
+- Sem novas dependências.
