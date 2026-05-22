@@ -9,23 +9,13 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TemplatesRouteImport } from './routes/templates'
-import { Route as ServicosRouteImport } from './routes/servicos'
 import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as TemplatesIndexRouteImport } from './routes/templates.index'
+import { Route as ServicosIndexRouteImport } from './routes/servicos.index'
 import { Route as TemplatesIdRouteImport } from './routes/templates.$id'
 import { Route as ServicosIdRouteImport } from './routes/servicos.$id'
 
-const TemplatesRoute = TemplatesRouteImport.update({
-  id: '/templates',
-  path: '/templates',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ServicosRoute = ServicosRouteImport.update({
-  id: '/servicos',
-  path: '/servicos',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ConfiguracoesRoute = ConfiguracoesRouteImport.update({
   id: '/configuracoes',
   path: '/configuracoes',
@@ -34,6 +24,16 @@ const ConfiguracoesRoute = ConfiguracoesRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TemplatesIndexRoute = TemplatesIndexRouteImport.update({
+  id: '/templates/',
+  path: '/templates/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ServicosIndexRoute = ServicosIndexRouteImport.update({
+  id: '/servicos/',
+  path: '/servicos/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TemplatesIdRoute = TemplatesIdRouteImport.update({
@@ -50,78 +50,64 @@ const ServicosIdRoute = ServicosIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/configuracoes': typeof ConfiguracoesRoute
-  '/servicos': typeof ServicosRouteWithChildren
-  '/templates': typeof TemplatesRouteWithChildren
   '/servicos/$id': typeof ServicosIdRoute
   '/templates/$id': typeof TemplatesIdRoute
+  '/servicos/': typeof ServicosIndexRoute
+  '/templates/': typeof TemplatesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/configuracoes': typeof ConfiguracoesRoute
-  '/servicos': typeof ServicosRouteWithChildren
-  '/templates': typeof TemplatesRouteWithChildren
   '/servicos/$id': typeof ServicosIdRoute
   '/templates/$id': typeof TemplatesIdRoute
+  '/servicos': typeof ServicosIndexRoute
+  '/templates': typeof TemplatesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/configuracoes': typeof ConfiguracoesRoute
-  '/servicos': typeof ServicosRouteWithChildren
-  '/templates': typeof TemplatesRouteWithChildren
   '/servicos/$id': typeof ServicosIdRoute
   '/templates/$id': typeof TemplatesIdRoute
+  '/servicos/': typeof ServicosIndexRoute
+  '/templates/': typeof TemplatesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/configuracoes'
-    | '/servicos'
-    | '/templates'
     | '/servicos/$id'
     | '/templates/$id'
+    | '/servicos/'
+    | '/templates/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/configuracoes'
-    | '/servicos'
-    | '/templates'
     | '/servicos/$id'
     | '/templates/$id'
+    | '/servicos'
+    | '/templates'
   id:
     | '__root__'
     | '/'
     | '/configuracoes'
-    | '/servicos'
-    | '/templates'
     | '/servicos/$id'
     | '/templates/$id'
+    | '/servicos/'
+    | '/templates/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ConfiguracoesRoute: typeof ConfiguracoesRoute
-  ServicosRoute: typeof ServicosRouteWithChildren
-  TemplatesRoute: typeof TemplatesRouteWithChildren
+  ServicosIndexRoute: typeof ServicosIndexRoute
+  TemplatesIndexRoute: typeof TemplatesIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/templates': {
-      id: '/templates'
-      path: '/templates'
-      fullPath: '/templates'
-      preLoaderRoute: typeof TemplatesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/servicos': {
-      id: '/servicos'
-      path: '/servicos'
-      fullPath: '/servicos'
-      preLoaderRoute: typeof ServicosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/configuracoes': {
       id: '/configuracoes'
       path: '/configuracoes'
@@ -134,6 +120,20 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/templates/': {
+      id: '/templates/'
+      path: '/templates'
+      fullPath: '/templates/'
+      preLoaderRoute: typeof TemplatesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/servicos/': {
+      id: '/servicos/'
+      path: '/servicos'
+      fullPath: '/servicos/'
+      preLoaderRoute: typeof ServicosIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/templates/$id': {
@@ -153,36 +153,22 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface ServicosRouteChildren {
-  ServicosIdRoute: typeof ServicosIdRoute
-}
-
-const ServicosRouteChildren: ServicosRouteChildren = {
-  ServicosIdRoute: ServicosIdRoute,
-}
-
-const ServicosRouteWithChildren = ServicosRoute._addFileChildren(
-  ServicosRouteChildren,
-)
-
-interface TemplatesRouteChildren {
-  TemplatesIdRoute: typeof TemplatesIdRoute
-}
-
-const TemplatesRouteChildren: TemplatesRouteChildren = {
-  TemplatesIdRoute: TemplatesIdRoute,
-}
-
-const TemplatesRouteWithChildren = TemplatesRoute._addFileChildren(
-  TemplatesRouteChildren,
-)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ConfiguracoesRoute: ConfiguracoesRoute,
-  ServicosRoute: ServicosRouteWithChildren,
-  TemplatesRoute: TemplatesRouteWithChildren,
+  ServicosIndexRoute: ServicosIndexRoute,
+  TemplatesIndexRoute: TemplatesIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
