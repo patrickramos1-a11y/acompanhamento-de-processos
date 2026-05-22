@@ -354,19 +354,59 @@ function Painel() {
                 </option>
               ))}
             </select>
-            {(search || empresaFiltro || tipoFiltro || statusFiltro) && (
+            <select
+              value={responsavelFiltro}
+              onChange={(e) => setResponsavelFiltro(e.target.value)}
+              className="rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring"
+            >
+              <option value="">Todos os responsáveis</option>
+              {responsaveis.map((r) => (
+                <option key={r} value={r}>
+                  {r}
+                </option>
+              ))}
+            </select>
+            <select
+              value={mesFiltro}
+              onChange={(e) => setMesFiltro(e.target.value)}
+              className="rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring"
+            >
+              <option value="">Todos os meses</option>
+              {[
+                ["01", "Janeiro"], ["02", "Fevereiro"], ["03", "Março"], ["04", "Abril"],
+                ["05", "Maio"], ["06", "Junho"], ["07", "Julho"], ["08", "Agosto"],
+                ["09", "Setembro"], ["10", "Outubro"], ["11", "Novembro"], ["12", "Dezembro"],
+              ].map(([v, l]) => (
+                <option key={v} value={v}>{l}</option>
+              ))}
+            </select>
+            <select
+              value={anoFiltro}
+              onChange={(e) => setAnoFiltro(e.target.value)}
+              className="rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring"
+            >
+              <option value="">Todos os anos</option>
+              {anos.map((a) => (
+                <option key={a} value={a}>{a}</option>
+              ))}
+            </select>
+            {(search || empresaFiltro || tipoFiltro || statusFiltro || responsavelFiltro || mesFiltro || anoFiltro) && (
               <button
                 onClick={() => {
                   setSearch("");
                   setEmpresaFiltro("");
                   setTipoFiltro("");
                   setStatusFiltro("");
+                  setResponsavelFiltro("");
+                  setMesFiltro("");
+                  setAnoFiltro("");
                 }}
                 className="rounded-md border border-input bg-background px-3 py-2 text-sm text-muted-foreground hover:text-foreground"
               >
                 Limpar filtros
               </button>
             )}
+
           </div>
 
           <div className="overflow-hidden rounded-lg border border-border bg-card">
