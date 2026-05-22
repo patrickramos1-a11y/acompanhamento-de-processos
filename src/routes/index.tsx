@@ -145,12 +145,31 @@ function Painel() {
       .sort((a, b) => b.total - a.total);
   }, [tipos, processos]);
 
+  const responsaveis = useMemo(() => {
+    const s = new Set<string>();
+    for (const p of processos) if (p.responsavel) s.add(p.responsavel);
+    return Array.from(s).sort((a, b) => a.localeCompare(b));
+  }, [processos]);
+
+  const anos = useMemo(() => {
+    const s = new Set<string>();
+    for (const p of processos) if (p.data_protocolo) s.add(p.data_protocolo.slice(0, 4));
+    return Array.from(s).sort((a, b) => b.localeCompare(a));
+  }, [processos]);
+
   const processosFiltrados = useMemo(() => {
     const q = search.trim().toLowerCase();
     return processos.filter((p) => {
       if (empresaFiltro && p.empresa_id !== empresaFiltro) return false;
       if (statusFiltro && p.status !== statusFiltro) return false;
       if (tipoFiltro && p.tipo_processo_id !== tipoFiltro) return false;
+      if (responsavelFiltro && p.responsavel !== responsavelFiltro) return false;
+      if (anoFiltro) {
+        if (!p.data_protocolo || p.data_protocolo.slice(0, 4) !== anoFiltro) return false;
+      }
+      if (mesFiltro) {
+        if (!p.data_protocolo || p.data_protocolo.slice(5, 7) !== mesFiltro) return false;
+      }
       if (q) {
         const empresa = empresaMap.get(p.empresa_id)?.nome ?? "";
         const hay = `${p.nome} ${p.numero_protocolo ?? ""} ${empresa} ${p.responsavel ?? ""}`.toLowerCase();
@@ -158,9 +177,10 @@ function Painel() {
       }
       return true;
     });
-  }, [processos, search, empresaFiltro, statusFiltro, tipoFiltro, empresaMap]);
+  }, [processos, search, empresaFiltro, statusFiltro, tipoFiltro, responsavelFiltro, mesFiltro, anoFiltro, empresaMap]);
 
   const ultimasTramitacoes = tramitacoes.slice(0, 12);
+
 
   return (
     <div className="min-h-screen bg-background">
