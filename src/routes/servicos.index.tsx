@@ -244,12 +244,12 @@ function ServicosPage() {
             selected={filterStatus}
             onChange={setFilterStatus}
           />
-          <div className="ml-auto" />
+          <div className="hidden sm:ml-auto sm:block" />
           <Dialog open={createOpen} onOpenChange={setCreateOpen}>
             <DialogTrigger asChild>
-              <Button className="gap-2"><Plus className="h-4 w-4" />Novo Serviço</Button>
+              <Button className="w-full gap-2 sm:w-auto"><Plus className="h-4 w-4" />Novo Serviço</Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="w-[calc(100vw-1rem)] max-w-lg sm:w-[calc(100vw-2rem)]">
               <DialogHeader>
                 <DialogTitle>Novo Serviço</DialogTitle>
                 <DialogDescription>Vincule a uma empresa e a um template existente.</DialogDescription>
