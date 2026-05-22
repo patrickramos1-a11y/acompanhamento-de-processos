@@ -690,32 +690,79 @@ function KPI({
   label,
   value,
   tone,
+  total,
 }: {
   icon: React.ReactNode;
   label: string;
   value: number;
   tone: "default" | "info" | "success" | "warning";
+  total?: number;
 }) {
   const toneClass = {
-    default: "bg-primary/10 text-primary",
-    info: "bg-info/10 text-info",
-    success: "bg-success/10 text-success",
-    warning: "bg-warning/15 text-warning-foreground",
+    default: "bg-gradient-to-br from-primary to-primary-glow text-primary-foreground",
+    info: "bg-info/15 text-info",
+    success: "bg-success/15 text-success",
+    warning: "bg-warning/20 text-warning-foreground",
   }[tone];
+  const barColor = {
+    default: "bg-gradient-to-r from-primary to-primary-glow",
+    info: "bg-info",
+    success: "bg-success",
+    warning: "bg-warning",
+  }[tone];
+  const pct = total && total > 0 ? Math.min(100, (value / total) * 100) : null;
   return (
-    <div className="rounded-lg border border-border bg-card p-5">
+    <div className="surface-elevated group relative overflow-hidden rounded-2xl p-5 transition-all hover:shadow-[var(--shadow-md)]">
       <div className="flex items-center justify-between">
-        <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
           {label}
         </div>
-        <div className={`flex h-9 w-9 items-center justify-center rounded-md ${toneClass}`}>
-          <span className="h-4 w-4 [&>svg]:h-4 [&>svg]:w-4">{icon}</span>
+        <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${toneClass} shadow-sm`}>
+          <span className="[&>svg]:h-4 [&>svg]:w-4">{icon}</span>
         </div>
       </div>
-      <div className="mt-3 text-3xl font-semibold tabular-nums text-card-foreground">{value}</div>
+      <div className="mt-3 font-display text-4xl font-bold tabular-nums leading-none text-foreground">
+        {value}
+      </div>
+      {pct !== null ? (
+        <div className="mt-4">
+          <div className="h-1 overflow-hidden rounded-full bg-muted">
+            <div className={`h-full rounded-full transition-all duration-700 ${barColor}`} style={{ width: `${pct}%` }} />
+          </div>
+          <div className="mt-1.5 text-[10px] tabular-nums text-muted-foreground">
+            {Math.round(pct)}% do total
+          </div>
+        </div>
+      ) : (
+        <div className="mt-4 h-[26px]" />
+      )}
     </div>
   );
 }
+
+function PillMetric({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: number;
+  tone?: "info" | "success";
+}) {
+  const cls =
+    tone === "info"
+      ? "bg-info/10 text-info"
+      : tone === "success"
+        ? "bg-success/10 text-success"
+        : "bg-muted/70 text-foreground";
+  return (
+    <div className={`rounded-lg px-2.5 py-1.5 ${cls}`}>
+      <div className="text-[9px] font-semibold uppercase tracking-wider opacity-80">{label}</div>
+      <div className="mt-0.5 font-display text-base font-bold tabular-nums leading-none">{value}</div>
+    </div>
+  );
+}
+
 
 function Th({ children }: { children: React.ReactNode }) {
   return (
