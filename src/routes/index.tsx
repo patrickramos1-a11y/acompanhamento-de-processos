@@ -11,6 +11,8 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { MultiSelect } from "@/components/multi-select";
+
 import {
   Activity,
   AlertTriangle,
