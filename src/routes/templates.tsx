@@ -210,9 +210,11 @@ function TemplatesPage() {
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
-                  <Button variant="ghost" size="icon" onClick={() => setEditId(t.id)}>
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
+                  <Link to="/templates/$id" params={{ id: t.id }}>
+                    <Button variant="ghost" size="icon" title="Ver detalhe">
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </Link>
                 </div>
               </div>
             );
