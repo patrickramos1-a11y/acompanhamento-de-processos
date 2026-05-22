@@ -241,7 +241,7 @@ function Painel() {
 
           <div>
             <SectionTitle icon={<TrendingUp className="h-4 w-4" />} title="Processos por tipo" />
-            <div className="space-y-2 rounded-lg border border-border bg-card p-4">
+            <div className="max-h-72 space-y-2 overflow-y-auto rounded-lg border border-border bg-card p-4">
               {porTipo.map((row) => {
                 const max = Math.max(...porTipo.map((r) => r.total));
                 const pct = max ? (row.total / max) * 100 : 0;
@@ -267,6 +267,7 @@ function Painel() {
                 );
               })}
             </div>
+
           </div>
         </section>
 
