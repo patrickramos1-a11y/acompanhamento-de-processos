@@ -185,7 +185,10 @@ function Painel() {
     });
   }, [processos, search, empresaFiltro, statusFiltro, tipoFiltro, responsavelFiltro, mesFiltro, anoFiltro, empresaMap]);
 
-  const ultimasTramitacoes = tramitacoes.slice(0, 12);
+  const ultimasTramitacoes = useMemo(() => {
+    const ids = new Set(processosFiltrados.map((p) => p.id));
+    return tramitacoes.filter((t) => ids.has(t.processo_id)).slice(0, 12);
+  }, [tramitacoes, processosFiltrados]);
 
 
   return (
