@@ -960,7 +960,7 @@ function EmpresaProcessosModal({
         </div>
 
         <div className="max-h-[60vh] overflow-auto">
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[640px] text-sm">
             <thead className="sticky top-0 bg-sidebar text-sidebar-foreground">
               <tr className="text-left">
                 <Th>Tipo</Th>
