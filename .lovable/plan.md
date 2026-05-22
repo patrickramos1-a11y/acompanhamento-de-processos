@@ -1,71 +1,61 @@
-## Objetivo
+## O que falta concluir
 
-Adicionar duas novas seções ao painel — **Serviços** e **Templates** — replicando a funcionalidade do projeto "Remix of Service Flow", mas vinculando os serviços às **empresas** já existentes (não há cadastro de clientes, pois as empresas vêm da importação de planilhas).
+Na implementação anterior foram criadas as listas de **Serviços** e **Templates**, mas algumas peças do plano original ficaram pendentes e a preview apresenta um erro de runtime (`AppHeader is not defined`) que está derrubando a renderização SSR do painel.
 
-## Navegação
+### 1. Corrigir o erro de SSR em `/`
 
-Adicionar uma barra de navegação no header (em `__root.tsx` ou no header já existente do `index.tsx`) com os links:
+`src/routes/index.tsx` importa `AppHeader` corretamente, mas o erro `AppHeader is not defined` aparece em SSR. Causa provável: cache stale do dev server após a criação simultânea de `app-header.tsx`. Plano:
 
-- **Painel** (`/`) — tela atual de processos
-- **Serviços** (`/servicos`) — nova
-- **Templates** (`/templates`) — nova
+- Reiniciar o dev server (já feito) e reabrir a preview.
+- Se persistir, reposicionar o import de `AppHeader` junto com os demais imports de `@/components/*` (linhas 7–15) para garantir que o code-splitter do TanStack o inclua no bundle do componente do route, e validar que o build limpo passa.
 
-Mesmo visual "Verde Mata" do painel (glass, gradient hero, Syne nas headings).
+### 2. Componente `CronogramaServico`
 
-## Banco de dados (nova migração)
+Criar `src/components/cronograma-servico.tsx` — visualização de fases + tarefas com:
 
-Quatro tabelas novas em `public.*`, todas com RLS aberto por enquanto (mesmo padrão das tabelas atuais — sem auth no app):
+- Agrupamento por fase, ordenado por `ordem`.
+- Cada tarefa: título, data prevista, status (pendente / concluída / atrasada), botão **Concluir**, popover **Estender prazo** (+N dias) e ação **Editar**.
+- Indicador visual quando `impacta_prazo = true` ou `gerar_apos_conclusao = true`.
+- Barra de progresso geral do serviço (concluídas / total).
 
-- **`templates`** — `nome`, `prazo_base_dias`, `descricao`
-- **`template_fases`** — pertence a um template — `nome`, `ordem`
-- **`template_tarefas`** — pertence a uma fase — `titulo`, `duracao_dias`, `tipo_prazo` (`RELATIVO_AO_INICIO` | `RELATIVO_A_CONCLUSAO_DE_TAREFA`), `impacta_prazo`, `depende_de_template_tarefa_id`, `gerar_apos_conclusao`
-- **`servicos`** — `empresa_id` (FK → `empresas.id`), `template_id`, `nome`, `data_inicial`, `prazo_base_dias`, `data_prevista_base`, `data_prevista_atual`, `status` (`em_andamento` | `concluido` | `cancelado`)
-- **`servico_tarefas`** — pertence a um serviço — mesmos campos da template_tarefa + `fase_nome`, `status` (`pendente` | `concluida` | `bloqueada`), `data_prevista`, `data_conclusao`
+Esse componente será usado tanto no expand do card em `/servicos` quanto na página de detalhe.
 
-Tudo com `created_at`/`updated_at` e trigger de `updated_at`.
+### 3. Página de detalhe `/servicos/$id`
 
-## Server functions (TanStack)
+Criar `src/routes/servicos.$id.tsx`:
 
-Novo arquivo `src/lib/servicos.functions.ts` com:
+- Loader com `ensureQueryData` em `getServicoById(id)` (server fn nova em `servicos.functions.ts`).
+- Header com `AppHeader current="servicos"` + breadcrumb voltando para `/servicos`.
+- Card de resumo: empresa, template de origem, data inicial, data prevista base vs atual, status, progresso.
+- `CronogramaServico` completo + botão **Salvar como template** (chama `salvarServicoComoTemplate`).
 
-- `listTemplates`, `createTemplate`, `updateTemplate`, `deleteTemplate`
-- `listServicos` (join com empresa), `criarServicoFromTemplate(empresaId, templateId, dataInicial)`, `deleteServico`
-- `concluirTarefa`, `adicionarTarefa`, `editarTarefa`, `extendTarefaDias`, `salvarServicoComoTemplate`
+### 4. Editor de template `/templates/$id`
 
-E `src/lib/dateCalculations.ts` portado do projeto referência (recálculo de datas previstas com base em dependências + `tipo_prazo` + `impacta_prazo`).
+Criar `src/routes/templates.$id.tsx`:
 
-## Rotas
+- Loader com `getTemplateById(id)` retornando template + fases + tarefas.
+- Edição inline de nome, descrição, `prazo_base_dias`.
+- CRUD de **Fases** (adicionar, renomear, remover, reordenar).
+- CRUD de **Tarefas** por fase, com campos: título, `duracao_dias`, `tipo_prazo` (RELATIVO_AO_INICIO / RELATIVO_A_TAREFA / DATA_FIXA), `impacta_prazo`, `depende_de_template_tarefa_id` (Combobox listando tarefas do mesmo template), `gerar_apos_conclusao`, `ordem`.
+- Botão **Duplicar template**.
 
-- **`src/routes/servicos.tsx`** — lista de serviços com:
-  - 4 KPI cards (Serviços, Concluídas, Atrasadas, Pendentes) calculadas a partir das tarefas filtradas
-  - Filtros: mês, ano, empresa (multi-select), status do serviço, status de tarefa
-  - Lista de serviços expansíveis mostrando tarefas (concluir / editar / +dias / cronograma)
-  - Botão "Novo Serviço" → diálogo escolhe empresa + template + data inicial
-  - Botão "Salvar como template"
-- **`src/routes/servicos.$id.tsx`** — detalhe do serviço (cronograma completo, gerenciar tarefas)
-- **`src/routes/templates.tsx`** — lista de templates (criar / excluir / abrir)
-- **`src/routes/templates.$id.tsx`** — editor de template (fases + tarefas, dependências, prazos)
+### 5. Server functions adicionais em `src/lib/servicos.functions.ts`
 
-Cada rota com `head()` próprio, `errorComponent`, `notFoundComponent`, loader via TanStack Query (`ensureQueryData` + `useSuspenseQuery`).
+- `getServicoById({ id })` — retorna serviço + empresa + tarefas ordenadas.
+- `getTemplateById({ id })` — retorna template + fases + tarefas.
+- `updateTemplateTarefa`, `reorderTemplateFases`, `reorderTemplateTarefas`.
+- `extendTarefaDias({ tarefaId, dias })` + recálculo via `recalcularServico`.
+- `salvarServicoComoTemplate({ servicoId, nome })`.
 
-## Diferenças vs. projeto referência
+### 6. Links de navegação
 
-- **Sem rota `/clientes`** nem cadastro — o seletor de "cliente" no diálogo de novo serviço usa as **empresas existentes** (com busca por nome/CNPJ).
-- Visual completo no estilo Verde Mata já implementado nesta plataforma (Syne nas headings, surface-elevated/glass nos containers, gradient-hero no header).
-- Stack atual: TanStack Start + Supabase via server functions (não zustand/react-router-dom).
+- Em `/servicos`: tornar o nome do serviço clicável → `/servicos/$id`.
+- Em `/templates`: botão **Editar** em cada card → `/templates/$id`.
 
-## Detalhes técnicos
+### Detalhes técnicos
 
-- Tipos compartilhados em `src/types/servicos.ts` (TipoPrazo, StatusTarefa, StatusServico, Template, Servico, etc.).
-- `dateCalculations.ts` puro (sem dependências de runtime) — usado tanto no servidor quanto no cliente.
-- Componente `CronogramaServico` portado para `src/components/cronograma-servico.tsx`.
-- Uso de `Dialog`, `AlertDialog`, `Popover`, `Command`, `Switch`, `Checkbox`, `Collapsible`, `Textarea` — todos já presentes em `src/components/ui/`.
-- Invalidation: `router.invalidate()` após mutações para revalidar loaders.
-
-## Entregáveis
-
-1. Migração SQL com as 5 tabelas + RLS + triggers
-2. `src/lib/servicos.functions.ts` + `src/lib/dateCalculations.ts` + `src/types/servicos.ts`
-3. 4 novas rotas (`servicos`, `servicos.$id`, `templates`, `templates.$id`)
-4. Componente `CronogramaServico`
-5. Header com navegação entre Painel / Serviços / Templates
+- Todas as queries seguem o padrão `queryOptions` + `ensureQueryData` no loader + `useSuspenseQuery` no componente.
+- Mutações usam `useServerFn` + `useMutation` + `queryClient.invalidateQueries`.
+- Reusar tokens do design system (`bg-gradient-hero`, `surface-elevated`, `glass`, `font-display`) já definidos em `src/styles.css` — sem cores hardcoded.
+- Não criar tabelas novas; o schema atual já cobre tudo.
+- Manter o cabeçalho `AppHeader` consistente em todas as três páginas (painel / serviços / templates) e suas filhas.
