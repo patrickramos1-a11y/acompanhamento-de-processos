@@ -165,16 +165,17 @@ function Painel() {
   const processosFiltrados = useMemo(() => {
     const q = search.trim().toLowerCase();
     return processos.filter((p) => {
-      if (empresaFiltro && p.empresa_id !== empresaFiltro) return false;
-      if (statusFiltro && p.status !== statusFiltro) return false;
-      if (tipoFiltro && p.tipo_processo_id !== tipoFiltro) return false;
-      if (responsavelFiltro && p.responsavel !== responsavelFiltro) return false;
-      if (anoFiltro) {
-        if (!p.data_protocolo || p.data_protocolo.slice(0, 4) !== anoFiltro) return false;
+      if (empresaFiltro.length && !empresaFiltro.includes(p.empresa_id)) return false;
+      if (statusFiltro.length && !statusFiltro.includes(p.status)) return false;
+      if (tipoFiltro.length && !tipoFiltro.includes(p.tipo_processo_id)) return false;
+      if (responsavelFiltro.length && (!p.responsavel || !responsavelFiltro.includes(p.responsavel))) return false;
+      if (anoFiltro.length) {
+        if (!p.data_protocolo || !anoFiltro.includes(p.data_protocolo.slice(0, 4))) return false;
       }
-      if (mesFiltro) {
-        if (!p.data_protocolo || p.data_protocolo.slice(5, 7) !== mesFiltro) return false;
+      if (mesFiltro.length) {
+        if (!p.data_protocolo || !mesFiltro.includes(p.data_protocolo.slice(5, 7))) return false;
       }
+
       if (q) {
         const empresa = empresaMap.get(p.empresa_id)?.nome ?? "";
         const hay = `${p.nome} ${p.numero_protocolo ?? ""} ${empresa} ${p.responsavel ?? ""}`.toLowerCase();
