@@ -75,9 +75,13 @@ function Painel() {
   const [empresaFiltro, setEmpresaFiltro] = useState<string>("");
   const [statusFiltro, setStatusFiltro] = useState<string>("");
   const [tipoFiltro, setTipoFiltro] = useState<string>("");
+  const [responsavelFiltro, setResponsavelFiltro] = useState<string>("");
+  const [mesFiltro, setMesFiltro] = useState<string>("");
+  const [anoFiltro, setAnoFiltro] = useState<string>("");
   const [empresaModal, setEmpresaModal] = useState<string | null>(null);
   const [processoModal, setProcessoModal] = useState<string | null>(null);
   const [modalStatusFiltro, setModalStatusFiltro] = useState<string>("");
+
 
   const empresaMap = useMemo(() => new Map(empresas.map((e) => [e.id, e])), [empresas]);
   const grupoMap = useMemo(() => new Map(grupos.map((g) => [g.id, g])), [grupos]);
