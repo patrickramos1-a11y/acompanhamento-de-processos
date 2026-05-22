@@ -208,6 +208,9 @@
   .shadow-glow { box-shadow: var(--shadow-glow); }
   .shadow-accent-glow { box-shadow: var(--shadow-accent); }
   .font-display { font-family: var(--font-display); }
+  .no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .safe-px { padding-left: max(env(safe-area-inset-left), 1rem); padding-right: max(env(safe-area-inset-right), 1rem); }
 }
 
 /* Scrollbar */
