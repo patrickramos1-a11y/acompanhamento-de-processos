@@ -12,6 +12,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { MultiSelect } from "@/components/multi-select";
+import { AppHeader } from "@/components/app-header";
 
 import {
   Activity,
