@@ -43,8 +43,8 @@ function TemplateDetail() {
         icon={<FileText className="h-5 w-5" />}
       />
 
-      <main className="mx-auto max-w-[1100px] space-y-6 px-6 py-10">
-        <div className="flex items-center justify-between">
+      <main className="mx-auto max-w-[1100px] space-y-6 px-4 py-6 sm:px-6 sm:py-10">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <Link
             to="/templates"
             className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
@@ -60,7 +60,7 @@ function TemplateDetail() {
           </Link>
         </div>
 
-        <div className="surface-elevated grid gap-4 rounded-2xl p-5 sm:grid-cols-3">
+        <div className="surface-elevated grid gap-4 rounded-2xl p-4 grid-cols-3 sm:p-5">
           <Stat label="Prazo base" value={`${template.prazo_base_dias}d`} />
           <Stat label="Fases" value={String(template.fases.length)} />
           <Stat label="Tarefas" value={String(total)} />
