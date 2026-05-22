@@ -201,10 +201,40 @@ function Painel() {
         </section>
 
         {/* Empresas + Tipos */}
-        <section className="grid gap-6 lg:grid-cols-3">
-          <div className="lg:col-span-2">
+        <section>
+          <div className="lg:float-right lg:ml-6 lg:mb-4 lg:w-[33%]">
+            <SectionTitle icon={<TrendingUp className="h-4 w-4" />} title="Processos por tipo" />
+            <div className="max-h-72 space-y-2 overflow-y-auto rounded-lg border border-border bg-card p-4">
+              {porTipo.map((row) => {
+                const max = Math.max(...porTipo.map((r) => r.total));
+                const pct = max ? (row.total / max) * 100 : 0;
+                return (
+                  <button
+                    key={row.tipo.id}
+                    onClick={() =>
+                      setTipoFiltro(tipoFiltro === row.tipo.id ? "" : row.tipo.id)
+                    }
+                    className="w-full text-left"
+                  >
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="truncate text-card-foreground">{row.tipo.nome}</span>
+                      <span className="font-medium tabular-nums">{row.total}</span>
+                    </div>
+                    <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
+                      <div
+                        className="h-full rounded-full bg-primary transition-all"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div>
             <SectionTitle icon={<Building2 className="h-4 w-4" />} title="Empresas" />
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {porEmpresa.map((row) => (
                 <button
                   key={row.empresa.id}
@@ -238,38 +268,9 @@ function Painel() {
               ))}
             </div>
           </div>
-
-          <div>
-            <SectionTitle icon={<TrendingUp className="h-4 w-4" />} title="Processos por tipo" />
-            <div className="max-h-72 space-y-2 overflow-y-auto rounded-lg border border-border bg-card p-4">
-              {porTipo.map((row) => {
-                const max = Math.max(...porTipo.map((r) => r.total));
-                const pct = max ? (row.total / max) * 100 : 0;
-                return (
-                  <button
-                    key={row.tipo.id}
-                    onClick={() =>
-                      setTipoFiltro(tipoFiltro === row.tipo.id ? "" : row.tipo.id)
-                    }
-                    className="w-full text-left"
-                  >
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="truncate text-card-foreground">{row.tipo.nome}</span>
-                      <span className="font-medium tabular-nums">{row.total}</span>
-                    </div>
-                    <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
-                      <div
-                        className="h-full rounded-full bg-primary transition-all"
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-
-          </div>
+          <div className="clear-both" />
         </section>
+
 
         {/* Processos table */}
         <section>
