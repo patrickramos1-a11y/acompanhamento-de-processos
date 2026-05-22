@@ -343,9 +343,10 @@ function Painel() {
           </div>
 
           <div className="overflow-hidden rounded-lg border border-border bg-card">
-            <div className="overflow-x-auto">
+            <div className="max-h-[600px] overflow-auto">
               <table className="w-full text-sm">
-                <thead className="bg-sidebar text-sidebar-foreground">
+                <thead className="sticky top-0 z-10 bg-sidebar text-sidebar-foreground">
+
                   <tr className="text-left">
                     <Th>Empresa</Th>
                     <Th>Tipo</Th>
