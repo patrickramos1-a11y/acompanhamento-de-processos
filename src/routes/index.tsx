@@ -202,74 +202,76 @@ function Painel() {
 
         {/* Empresas + Tipos */}
         <section>
-          <div className="lg:float-right lg:ml-6 lg:mb-4 lg:w-[33%]">
-            <SectionTitle icon={<TrendingUp className="h-4 w-4" />} title="Processos por tipo" />
-            <div className="max-h-72 space-y-2 overflow-y-auto rounded-lg border border-border bg-card p-4">
-              {porTipo.map((row) => {
-                const max = Math.max(...porTipo.map((r) => r.total));
-                const pct = max ? (row.total / max) * 100 : 0;
-                return (
-                  <button
-                    key={row.tipo.id}
-                    onClick={() =>
-                      setTipoFiltro(tipoFiltro === row.tipo.id ? "" : row.tipo.id)
-                    }
-                    className="w-full text-left"
-                  >
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="truncate text-card-foreground">{row.tipo.nome}</span>
-                      <span className="font-medium tabular-nums">{row.total}</span>
-                    </div>
-                    <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
-                      <div
-                        className="h-full rounded-full bg-primary transition-all"
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                  </button>
-                );
-              })}
+          <SectionTitle icon={<Building2 className="h-4 w-4" />} title="Empresas" />
+          <div className="grid grid-cols-1 gap-3 [grid-auto-flow:dense] sm:grid-cols-2 xl:grid-cols-3">
+            {/* Card "Processos por tipo" — coluna 3, ocupa 2 linhas em xl */}
+            <div className="rounded-lg border border-border bg-card p-4 xl:col-start-3 xl:row-span-2 xl:self-start">
+              <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <TrendingUp className="h-4 w-4" />
+                Processos por tipo
+              </div>
+              <div className="max-h-72 space-y-2 overflow-y-auto">
+                {porTipo.map((row) => {
+                  const max = Math.max(...porTipo.map((r) => r.total));
+                  const pct = max ? (row.total / max) * 100 : 0;
+                  return (
+                    <button
+                      key={row.tipo.id}
+                      onClick={() =>
+                        setTipoFiltro(tipoFiltro === row.tipo.id ? "" : row.tipo.id)
+                      }
+                      className="w-full text-left"
+                    >
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="truncate text-card-foreground">{row.tipo.nome}</span>
+                        <span className="font-medium tabular-nums">{row.total}</span>
+                      </div>
+                      <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
+                        <div
+                          className="h-full rounded-full bg-primary transition-all"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
 
-          <div>
-            <SectionTitle icon={<Building2 className="h-4 w-4" />} title="Empresas" />
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              {porEmpresa.map((row) => (
-                <button
-                  key={row.empresa.id}
-                  onClick={() => { setEmpresaModal(row.empresa.id); setModalStatusFiltro(""); }}
-                  className="group rounded-lg border border-border bg-card p-4 text-left transition-all hover:border-primary hover:shadow-sm"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <h3 className="truncate font-medium text-card-foreground">
-                        {row.empresa.nome}
-                      </h3>
-                      {row.grupo && (
-                        <p className="mt-0.5 text-xs text-muted-foreground">
-                          {row.grupo.nome}
-                        </p>
-                      )}
-                    </div>
-                    {row.parados > 0 && (
-                      <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-warning/40 bg-warning/15 px-2 py-0.5 text-[10px] font-medium text-warning-foreground">
-                        <AlertTriangle className="h-3 w-3" />
-                        {row.parados} parado{row.parados > 1 ? "s" : ""}
-                      </span>
+            {porEmpresa.map((row) => (
+              <button
+                key={row.empresa.id}
+                onClick={() => { setEmpresaModal(row.empresa.id); setModalStatusFiltro(""); }}
+                className="group rounded-lg border border-border bg-card p-4 text-left transition-all hover:border-primary hover:shadow-sm"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <h3 className="truncate font-medium text-card-foreground">
+                      {row.empresa.nome}
+                    </h3>
+                    {row.grupo && (
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        {row.grupo.nome}
+                      </p>
                     )}
                   </div>
-                  <div className="mt-3 flex gap-4 text-xs">
-                    <Metric label="Total" value={row.total} />
-                    <Metric label="Ativos" value={row.ativos} tone="info" />
-                    <Metric label="Concluídos" value={row.concluidos} tone="success" />
-                  </div>
-                </button>
-              ))}
-            </div>
+                  {row.parados > 0 && (
+                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-warning/40 bg-warning/15 px-2 py-0.5 text-[10px] font-medium text-warning-foreground">
+                      <AlertTriangle className="h-3 w-3" />
+                      {row.parados} parado{row.parados > 1 ? "s" : ""}
+                    </span>
+                  )}
+                </div>
+                <div className="mt-3 flex gap-4 text-xs">
+                  <Metric label="Total" value={row.total} />
+                  <Metric label="Ativos" value={row.ativos} tone="info" />
+                  <Metric label="Concluídos" value={row.concluidos} tone="success" />
+                </div>
+              </button>
+            ))}
           </div>
-          <div className="clear-both" />
         </section>
+
 
 
         {/* Processos table */}
