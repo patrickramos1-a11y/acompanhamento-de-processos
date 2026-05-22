@@ -70,7 +70,7 @@ function ServicoDetail() {
         icon={<ClipboardList className="h-5 w-5" />}
       />
 
-      <main className="mx-auto max-w-[1100px] space-y-6 px-6 py-10">
+      <main className="mx-auto max-w-[1100px] space-y-6 px-4 py-6 sm:px-6 sm:py-10">
         <Link
           to="/servicos"
           className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
@@ -79,7 +79,7 @@ function ServicoDetail() {
           Voltar para serviços
         </Link>
 
-        <div className="surface-elevated grid gap-4 rounded-2xl p-5 md:grid-cols-4">
+        <div className="surface-elevated grid gap-4 rounded-2xl p-4 grid-cols-2 sm:p-5 md:grid-cols-4">
           <InfoCard
             icon={<Building2 className="h-4 w-4" />}
             label="Empresa"

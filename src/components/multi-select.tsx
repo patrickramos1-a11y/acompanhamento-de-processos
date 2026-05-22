@@ -49,7 +49,7 @@ export function MultiSelect({
           variant="outline"
           size="sm"
           className={cn(
-            "h-9 justify-between gap-2 rounded-lg border-input/60 bg-background/70 px-3 text-xs font-medium transition-all hover:bg-background",
+            "h-9 w-full justify-between gap-2 rounded-lg border-input/60 bg-background/70 px-3 text-xs font-medium transition-all hover:bg-background sm:w-auto",
             selected.length > 0 && "border-primary/50 bg-primary/8 text-primary hover:bg-primary/10",
             className,
           )}
@@ -59,7 +59,7 @@ export function MultiSelect({
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent className="w-56 p-0" align="start">
+      <PopoverContent className="w-[min(calc(100vw-2rem),18rem)] p-0 sm:w-56" align="start">
         <Command>
           <CommandInput placeholder={searchPlaceholder ?? "Buscar..."} className="h-9" />
           <CommandList>

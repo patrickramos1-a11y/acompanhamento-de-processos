@@ -203,9 +203,9 @@ function Painel() {
       />
 
 
-      <main className="mx-auto max-w-[1400px] space-y-10 px-6 py-10">
+      <main className="mx-auto max-w-[1400px] space-y-8 px-4 py-6 sm:space-y-10 sm:px-6 sm:py-10 lg:px-8">
         {/* KPIs */}
-        <section className="grid animate-fade-in gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <section className="grid animate-fade-in gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
           <KPI icon={<FileText />} label="Total de processos" value={kpis.total} tone="default" />
           <KPI icon={<Activity />} label="Em andamento" value={kpis.ativos} tone="info" total={kpis.total} />
           <KPI icon={<CheckCircle2 />} label="Concluídos" value={kpis.concluidos} tone="success" total={kpis.total} />
@@ -335,8 +335,8 @@ function Painel() {
           </div>
 
           {/* Filters */}
-          <div className="glass mb-4 flex flex-wrap items-center gap-1.5 rounded-xl p-2 shadow-sm">
-            <div className="relative min-w-[240px] flex-1">
+          <div className="glass mb-4 grid gap-2 rounded-xl p-2 shadow-sm sm:flex sm:flex-wrap sm:items-center sm:gap-1.5">
+            <div className="relative w-full sm:min-w-[240px] sm:flex-1">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
               <input
                 value={search}
@@ -416,7 +416,81 @@ function Painel() {
           </div>
 
           <div className="surface-elevated overflow-hidden rounded-2xl">
-            <div className="max-h-[640px] overflow-auto">
+            {/* Mobile: cards */}
+            <div className="md:hidden">
+              <div className="max-h-[640px] divide-y divide-border/60 overflow-auto">
+                {processosFiltrados.length === 0 && (
+                  <div className="px-4 py-14 text-center text-sm text-muted-foreground">
+                    Nenhum processo encontrado com os filtros aplicados.
+                  </div>
+                )}
+                {processosFiltrados.map((p) => {
+                  const empresa = empresaMap.get(p.empresa_id);
+                  const tipo = tipoMap.get(p.tipo_processo_id);
+                  const etapaAtual = p.etapa_atual_id ? etapaMap.get(p.etapa_atual_id) : null;
+                  const etapasDoTipo = etapasByTipo.get(p.tipo_processo_id) ?? [];
+                  const idxAtual = etapaAtual
+                    ? etapasDoTipo.findIndex((e) => e.id === etapaAtual.id)
+                    : -1;
+                  const total = etapasDoTipo.length;
+                  const progresso =
+                    p.status === "concluido"
+                      ? 100
+                      : total > 0 && idxAtual >= 0
+                        ? ((idxAtual + 1) / total) * 100
+                        : 0;
+                  const parado = isParado(p);
+                  return (
+                    <div key={p.id} className="space-y-2 px-4 py-3.5">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5">
+                            <p className="truncate font-medium text-card-foreground">{empresa?.nome ?? "—"}</p>
+                            {parado && <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-warning" />}
+                          </div>
+                          <p className="truncate text-xs text-muted-foreground">{p.nome}</p>
+                        </div>
+                        <span
+                          className={`inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${STATUS_CLASS[p.status]}`}
+                        >
+                          {p.status_detalhado ?? STATUS_LABEL[p.status]}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+                        {tipo?.nome && <span className="truncate">{tipo.nome}</span>}
+                        {p.numero_protocolo && <span className="font-mono">#{p.numero_protocolo}</span>}
+                        {p.data_protocolo && <span>{fmtDate(p.data_protocolo)}</span>}
+                        {p.responsavel && <span>{p.responsavel}</span>}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
+                          <div
+                            className="h-full rounded-full transition-all"
+                            style={{
+                              width: `${progresso}%`,
+                              background:
+                                p.status === "concluido"
+                                  ? "var(--success)"
+                                  : etapaAtual?.cor ?? "var(--primary)",
+                            }}
+                          />
+                        </div>
+                        <span className="text-[10px] font-medium tabular-nums text-muted-foreground">
+                          {idxAtual >= 0 && total > 0
+                            ? `${idxAtual + 1}/${total}`
+                            : p.status === "concluido"
+                              ? `${total}/${total}`
+                              : "—"}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Desktop/tablet: table */}
+            <div className="hidden max-h-[640px] overflow-auto md:block">
               <table className="w-full text-sm">
                 <thead className="sticky top-0 z-10 bg-gradient-hero text-sidebar-foreground">
                   <tr className="text-left">
@@ -573,8 +647,8 @@ function Painel() {
                 const statusLabel = proc?.status_detalhado ?? (statusAtual ? STATUS_TAB_LABEL[statusAtual] ?? statusAtual : null);
                 const initial = (empresa?.nome ?? "—").trim().charAt(0).toUpperCase();
                 return (
-                  <li key={t.id} className="flex gap-4 px-4 py-3.5 transition-colors hover:bg-accent-soft/30">
-                    <div className="flex w-24 shrink-0 flex-col">
+                  <li key={t.id} className="flex gap-3 px-3 py-3.5 transition-colors hover:bg-accent-soft/30 sm:gap-4 sm:px-4">
+                    <div className="hidden w-24 shrink-0 flex-col sm:flex">
                       <span className="inline-flex w-fit items-center rounded-md bg-accent-soft px-2 py-0.5 text-[10px] font-semibold tabular-nums text-accent-foreground">
                         {fmtDate(t.data_evento)}
                       </span>
@@ -583,6 +657,9 @@ function Painel() {
                       {initial}
                     </div>
                     <div className="min-w-0 flex-1">
+                      <div className="mb-0.5 text-[10px] font-semibold tabular-nums text-accent-foreground sm:hidden">
+                        {fmtDate(t.data_evento)}
+                      </div>
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="font-medium text-card-foreground">
                           {empresa?.nome ?? "—"}
@@ -841,11 +918,11 @@ function EmpresaProcessosModal({
 
   return (
     <Dialog open={!!empresaId} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-[1100px] p-0">
-        <DialogHeader className="border-b border-border bg-sidebar px-6 py-4 text-sidebar-foreground">
+      <DialogContent className="w-[calc(100vw-1rem)] max-w-[1100px] p-0 sm:w-[calc(100vw-2rem)]">
+        <DialogHeader className="border-b border-border bg-sidebar px-4 py-3.5 text-sidebar-foreground sm:px-6 sm:py-4">
           <DialogTitle className="flex items-center gap-2 text-base">
             <Building2 className="h-4 w-4" />
-            {empresa?.nome ?? "Empresa"}
+            <span className="truncate">{empresa?.nome ?? "Empresa"}</span>
           </DialogTitle>
           <DialogDescription className="text-sidebar-foreground/70">
             {grupo ? grupo.nome + " · " : ""}
@@ -853,7 +930,7 @@ function EmpresaProcessosModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="border-b border-border bg-muted/30 px-6 py-3">
+        <div className="border-b border-border bg-muted/30 px-4 py-3 sm:px-6">
           <div className="flex flex-wrap gap-2">
             {STATUS_TABS.map((tab) => {
               const active = statusFiltro === tab.key;
@@ -883,7 +960,7 @@ function EmpresaProcessosModal({
         </div>
 
         <div className="max-h-[60vh] overflow-auto">
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[640px] text-sm">
             <thead className="sticky top-0 bg-sidebar text-sidebar-foreground">
               <tr className="text-left">
                 <Th>Tipo</Th>
@@ -1032,8 +1109,8 @@ function ProcessoTramitacoesModal({
 
   return (
     <Dialog open={!!processoId} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-[800px] p-0">
-        <DialogHeader className="border-b border-border bg-sidebar px-6 py-4 text-sidebar-foreground">
+      <DialogContent className="w-[calc(100vw-1rem)] max-w-[800px] p-0 sm:w-[calc(100vw-2rem)]">
+        <DialogHeader className="border-b border-border bg-sidebar px-4 py-3.5 text-sidebar-foreground sm:px-6 sm:py-4">
           <DialogTitle className="flex items-center gap-2 text-base">
             <ClipboardList className="h-4 w-4" />
             Acompanhamentos do processo
@@ -1061,8 +1138,8 @@ function ProcessoTramitacoesModal({
               {tramsDoProcesso.map((t) => {
                 const etapa = t.etapa_id ? etapaMap.get(t.etapa_id) : null;
                 return (
-                  <li key={t.id} className="flex gap-4 px-6 py-4 hover:bg-muted/30">
-                    <div className="w-24 shrink-0 text-xs text-muted-foreground">
+                  <li key={t.id} className="flex flex-col gap-1 px-4 py-3.5 hover:bg-muted/30 sm:flex-row sm:gap-4 sm:px-6 sm:py-4">
+                    <div className="shrink-0 text-xs font-medium text-muted-foreground sm:w-24">
                       {fmtDate(t.data_evento)}
                     </div>
                     <div className="min-w-0 flex-1">

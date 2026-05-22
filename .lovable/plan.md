@@ -1,61 +1,99 @@
-## O que falta concluir
+## Objetivo
 
-Na implementação anterior foram criadas as listas de **Serviços** e **Templates**, mas algumas peças do plano original ficaram pendentes e a preview apresenta um erro de runtime (`AppHeader is not defined`) que está derrubando a renderização SSR do painel.
+Tornar toda a plataforma totalmente responsiva, mantendo a identidade visual atual. Sem mudanças de regra de negócio — apenas layout, navegação e componentes de UI.
 
-### 1. Corrigir o erro de SSR em `/`
+## Escopo
 
-`src/routes/index.tsx` importa `AppHeader` corretamente, mas o erro `AppHeader is not defined` aparece em SSR. Causa provável: cache stale do dev server após a criação simultânea de `app-header.tsx`. Plano:
+Arquivos afetados (apenas frontend/apresentação):
+- `src/components/app-header.tsx`
+- `src/components/cronograma-servico.tsx`
+- `src/components/multi-select.tsx`
+- `src/routes/__root.tsx`
+- `src/routes/index.tsx` (1104 linhas — Painel + tabelas grandes)
+- `src/routes/servicos.index.tsx`
+- `src/routes/servicos.$id.tsx`
+- `src/routes/templates.index.tsx`
+- `src/routes/templates.$id.tsx`
+- `src/routes/configuracoes.tsx`
+- `src/styles.css` (ajustes pontuais de tokens/utilitários responsivos)
 
-- Reiniciar o dev server (já feito) e reabrir a preview.
-- Se persistir, reposicionar o import de `AppHeader` junto com os demais imports de `@/components/*` (linhas 7–15) para garantir que o code-splitter do TanStack o inclua no bundle do componente do route, e validar que o build limpo passa.
+## Estratégia geral
 
-### 2. Componente `CronogramaServico`
+Breakpoints Tailwind padrão:
+- Mobile: base (< 640px)
+- Tablet: `sm` (640px) e `md` (768px)
+- Desktop: `lg` (1024px) e `xl` (1280px)
 
-Criar `src/components/cronograma-servico.tsx` — visualização de fases + tarefas com:
+Princípios:
+1. Mobile-first: classes base para mobile, escalando com `sm:`, `md:`, `lg:`.
+2. Padding/tipografia fluida: `px-4 sm:px-6 lg:px-8`, `text-xl sm:text-2xl`.
+3. Tabelas grandes → wrapper `overflow-x-auto` no desktop, **cards empilhados** no mobile (`md:hidden` para cards, `hidden md:table` para tabela).
+4. Grids: `grid-cols-1 sm:grid-cols-2 lg:grid-cols-4` para KPIs.
+5. Filtros e barras de ação: `flex-col sm:flex-row` com `flex-wrap` e largura total dos selects no mobile.
 
-- Agrupamento por fase, ordenado por `ordem`.
-- Cada tarefa: título, data prevista, status (pendente / concluída / atrasada), botão **Concluir**, popover **Estender prazo** (+N dias) e ação **Editar**.
-- Indicador visual quando `impacta_prazo = true` ou `gerar_apos_conclusao = true`.
-- Barra de progresso geral do serviço (concluídas / total).
+## Mudanças por arquivo
 
-Esse componente será usado tanto no expand do card em `/servicos` quanto na página de detalhe.
+### `app-header.tsx`
+- Container: `px-4 sm:px-6` e `py-5 sm:py-7`.
+- Título: `text-xl sm:text-2xl`; ícone `h-10 w-10 sm:h-12 sm:w-12`.
+- Tabs: scroll horizontal no mobile (`overflow-x-auto -mx-4 px-4` no wrapper, `whitespace-nowrap` nos links) para evitar quebra. Labels visíveis sempre; ícones reduzidos em mobile.
+- Botão Configurações: já tem `hidden sm:inline` no label — manter, mas garantir área de toque mínima 40px.
 
-### 3. Página de detalhe `/servicos/$id`
+### `__root.tsx`
+- Garantir `<meta name="viewport" content="width=device-width, initial-scale=1">` no head (verificar e adicionar se faltar).
+- `<body>` com `min-h-dvh` em vez de `min-h-screen` para evitar problema da barra do navegador mobile.
 
-Criar `src/routes/servicos.$id.tsx`:
+### `routes/index.tsx` (Painel)
+- Container principal: `max-w-[1400px] px-4 sm:px-6 lg:px-8 py-6 sm:py-8`.
+- KPIs (linha 208): manter `md:grid-cols-2 lg:grid-cols-4` mas adicionar `grid-cols-1 sm:grid-cols-2`.
+- Grid de cards (linha 224): já ok, validar `gap-3 sm:gap-4`.
+- **Tabela de processos (linhas 420–528) e segunda tabela (886–996)**:
+  - Wrapper atual: adicionar `<div className="overflow-x-auto -mx-4 sm:mx-0">` no breakpoint desktop.
+  - Versão mobile (`md:hidden`): renderizar lista de cards com os mesmos dados (status badge + colunas principais empilhadas).
+  - Versão desktop (`hidden md:block`): tabela atual com scroll horizontal de segurança.
+- Barra de busca/filtros (linha 339): `flex-col sm:flex-row`, busca `w-full sm:min-w-[240px]`.
+- Botões de ação: `w-full sm:w-auto` no mobile; agrupar em `flex-wrap gap-2`.
 
-- Loader com `ensureQueryData` em `getServicoById(id)` (server fn nova em `servicos.functions.ts`).
-- Header com `AppHeader current="servicos"` + breadcrumb voltando para `/servicos`.
-- Card de resumo: empresa, template de origem, data inicial, data prevista base vs atual, status, progresso.
-- `CronogramaServico` completo + botão **Salvar como template** (chama `salvarServicoComoTemplate`).
+### `routes/servicos.index.tsx`
+- KPIs (linha 206): `grid-cols-2 sm:grid-cols-2 lg:grid-cols-4` (KPIs em 2 colunas no mobile fica melhor que 1).
+- Filtros (multi-select): empilhar verticalmente no mobile, `w-full` nos selects.
+- Lista expansível: padding reduzido `p-3 sm:p-5`; ações em `flex-wrap`.
 
-### 4. Editor de template `/templates/$id`
+### `routes/servicos.$id.tsx`
+- Card resumo (linha 82): `grid-cols-2 md:grid-cols-4` (4 KPIs em 2x2 no mobile).
+- Header de ações: empilhar em mobile.
 
-Criar `src/routes/templates.$id.tsx`:
+### `routes/templates.index.tsx` e `templates.$id.tsx`
+- Editor fase/tarefa (linha 326): `sm:grid-cols-[1fr_140px]` já bom — adicionar `gap-2` no mobile.
+- Diálogos: garantir `max-h-[90vh] overflow-y-auto` e `w-[95vw] sm:max-w-lg`.
+- Grid de KPIs do template (linha 63): `grid-cols-1 sm:grid-cols-3`.
 
-- Loader com `getTemplateById(id)` retornando template + fases + tarefas.
-- Edição inline de nome, descrição, `prazo_base_dias`.
-- CRUD de **Fases** (adicionar, renomear, remover, reordenar).
-- CRUD de **Tarefas** por fase, com campos: título, `duracao_dias`, `tipo_prazo` (RELATIVO_AO_INICIO / RELATIVO_A_TAREFA / DATA_FIXA), `impacta_prazo`, `depende_de_template_tarefa_id` (Combobox listando tarefas do mesmo template), `gerar_apos_conclusao`, `ordem`.
-- Botão **Duplicar template**.
+### `routes/configuracoes.tsx`
+- Já parcialmente responsivo. Validar abas — usar scroll horizontal se necessário.
+- Grids de cores (linha 217, 309): já corretos.
 
-### 5. Server functions adicionais em `src/lib/servicos.functions.ts`
+### `components/cronograma-servico.tsx`
+- Cabeçalho da fase: `flex-col sm:flex-row` para barra de progresso.
+- Tarefa: ações (concluir/estender) em `flex-wrap`; popover ajustado com `w-[calc(100vw-2rem)] sm:w-80`.
+- Badges de status: encurtar texto no mobile via classes utilitárias ou apenas ícone.
 
-- `getServicoById({ id })` — retorna serviço + empresa + tarefas ordenadas.
-- `getTemplateById({ id })` — retorna template + fases + tarefas.
-- `updateTemplateTarefa`, `reorderTemplateFases`, `reorderTemplateTarefas`.
-- `extendTarefaDias({ tarefaId, dias })` + recálculo via `recalcularServico`.
-- `salvarServicoComoTemplate({ servicoId, nome })`.
+### `components/multi-select.tsx`
+- Trigger: `w-full` por padrão.
+- Popover content: `w-[var(--radix-popover-trigger-width)]` para casar com o trigger.
 
-### 6. Links de navegação
+### `styles.css`
+- Adicionar utilitário `.no-scrollbar` para a faixa de tabs.
+- Garantir `html { -webkit-text-size-adjust: 100%; }`.
+- Revisar fontes display: `clamp()` para títulos hero se houver.
 
-- Em `/servicos`: tornar o nome do serviço clicável → `/servicos/$id`.
-- Em `/templates`: botão **Editar** em cada card → `/templates/$id`.
+## Validação
 
-### Detalhes técnicos
+1. `bun run build` (rodado automaticamente).
+2. Testar em viewports: 375 (mobile), 768 (tablet), 1024 e 1440 (desktop) via preview.
+3. Conferir: navegação header, KPIs, tabelas (sem overflow lateral indesejado da página), diálogos, filtros multi-select.
 
-- Todas as queries seguem o padrão `queryOptions` + `ensureQueryData` no loader + `useSuspenseQuery` no componente.
-- Mutações usam `useServerFn` + `useMutation` + `queryClient.invalidateQueries`.
-- Reusar tokens do design system (`bg-gradient-hero`, `surface-elevated`, `glass`, `font-display`) já definidos em `src/styles.css` — sem cores hardcoded.
-- Não criar tabelas novas; o schema atual já cobre tudo.
-- Manter o cabeçalho `AppHeader` consistente em todas as três páginas (painel / serviços / templates) e suas filhas.
+## Fora do escopo
+
+- Mudanças em lógica de negócio, server functions, schema do banco.
+- Reorganização de rotas ou criação de novas páginas.
+- Alterações de paleta/identidade visual.

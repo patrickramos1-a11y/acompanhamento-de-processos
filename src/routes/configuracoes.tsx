@@ -124,21 +124,21 @@ function ConfiguracoesPage() {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-sidebar text-sidebar-foreground">
-        <div className="mx-auto flex max-w-[1400px] items-center justify-between px-6 py-5">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground">
+        <div className="mx-auto flex max-w-[1400px] flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-5 lg:px-8">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground">
               <Settings className="h-5 w-5" />
             </div>
-            <div>
-              <h1 className="text-lg font-semibold tracking-tight">Configurações</h1>
-              <p className="text-xs text-sidebar-foreground/70">
+            <div className="min-w-0">
+              <h1 className="truncate text-base font-semibold tracking-tight sm:text-lg">Configurações</h1>
+              <p className="truncate text-xs text-sidebar-foreground/70">
                 Importação de dados e ajustes da plataforma
               </p>
             </div>
           </div>
           <Link
             to="/"
-            className="inline-flex items-center gap-2 rounded-md border border-sidebar-foreground/20 px-3 py-1.5 text-sm text-sidebar-foreground hover:bg-sidebar-foreground/10"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-sidebar-foreground/20 px-3 py-1.5 text-sm text-sidebar-foreground hover:bg-sidebar-foreground/10 sm:w-auto"
           >
             <ArrowLeft className="h-4 w-4" />
             Voltar ao painel
@@ -146,7 +146,7 @@ function ConfiguracoesPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-[1100px] space-y-6 px-6 py-8">
+      <main className="mx-auto max-w-[1100px] space-y-6 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
         <section className="rounded-lg border border-border bg-card p-6">
           <div className="flex items-start gap-4">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">

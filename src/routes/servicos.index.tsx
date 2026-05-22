@@ -201,9 +201,9 @@ function ServicosPage() {
         icon={<ClipboardList className="h-5 w-5" />}
       />
 
-      <main className="mx-auto max-w-[1400px] space-y-6 px-6 py-10">
+      <main className="mx-auto max-w-[1400px] space-y-6 px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
         {/* KPIs */}
-        <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <section className="grid gap-3 grid-cols-2 sm:gap-4 lg:grid-cols-4">
           <Kpi icon={<ClipboardList />} label="Serviços" value={kpis.servicos} tone="default" />
           <Kpi icon={<Check />} label="Concluídas" value={kpis.concluidas} tone="success" />
           <Kpi icon={<AlertTriangle />} label="Atrasadas" value={kpis.atrasadas} tone="warning" />
@@ -211,9 +211,9 @@ function ServicosPage() {
         </section>
 
         {/* Filtros */}
-        <section className="glass flex flex-wrap items-center gap-2 rounded-xl p-3">
+        <section className="glass grid gap-2 rounded-xl p-3 sm:flex sm:flex-wrap sm:items-center sm:gap-2">
           <Select value={String(filterMonth)} onValueChange={(v) => setFilterMonth(Number(v))}>
-            <SelectTrigger className="h-9 w-[130px]"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="h-9 w-full sm:w-[130px]"><SelectValue /></SelectTrigger>
             <SelectContent>
               {MONTHS.map((m, i) => (
                 <SelectItem key={m} value={String(i)}>{m}</SelectItem>
@@ -221,7 +221,7 @@ function ServicosPage() {
             </SelectContent>
           </Select>
           <Select value={String(filterYear)} onValueChange={(v) => setFilterYear(Number(v))}>
-            <SelectTrigger className="h-9 w-[100px]"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="h-9 w-full sm:w-[100px]"><SelectValue /></SelectTrigger>
             <SelectContent>
               {anos.map((y) => (
                 <SelectItem key={y} value={String(y)}>{y}</SelectItem>
@@ -244,12 +244,12 @@ function ServicosPage() {
             selected={filterStatus}
             onChange={setFilterStatus}
           />
-          <div className="ml-auto" />
+          <div className="hidden sm:ml-auto sm:block" />
           <Dialog open={createOpen} onOpenChange={setCreateOpen}>
             <DialogTrigger asChild>
-              <Button className="gap-2"><Plus className="h-4 w-4" />Novo Serviço</Button>
+              <Button className="w-full gap-2 sm:w-auto"><Plus className="h-4 w-4" />Novo Serviço</Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="w-[calc(100vw-1rem)] max-w-lg sm:w-[calc(100vw-2rem)]">
               <DialogHeader>
                 <DialogTitle>Novo Serviço</DialogTitle>
                 <DialogDescription>Vincule a uma empresa e a um template existente.</DialogDescription>
@@ -316,24 +316,24 @@ function ServicosPage() {
             const atrasado = s._vis.atrasado || (s.status !== "concluido" && parseISO(s.data_prevista_atual) < now);
 
             return (
-              <div key={s.id} className="surface-card rounded-xl p-4">
-                <div className="flex items-center gap-3">
-                  <button onClick={() => toggle(s.id)} className="text-muted-foreground hover:text-foreground">
+              <div key={s.id} className="surface-card rounded-xl p-3 sm:p-4">
+                <div className="flex items-start gap-2 sm:items-center sm:gap-3">
+                  <button onClick={() => toggle(s.id)} className="mt-1 text-muted-foreground hover:text-foreground sm:mt-0">
                     {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                   </button>
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent-soft text-accent-foreground">
+                  <div className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent-soft text-accent-foreground sm:flex">
                     <Building2 className="h-4 w-4" />
                   </div>
-                  <div className="flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-1.5">
                       <Link
                         to="/servicos/$id"
                         params={{ id: s.id }}
-                        className="font-semibold text-foreground transition-colors hover:text-primary"
+                        className="break-words font-semibold text-foreground transition-colors hover:text-primary"
                       >
                         {s.nome}
                       </Link>
-                      <Badge variant="outline">{empresa?.nome ?? "—"}</Badge>
+                      <Badge variant="outline" className="max-w-full truncate">{empresa?.nome ?? "—"}</Badge>
                       <StatusBadge status={s.status} atrasado={atrasado} />
                     </div>
                     <p className="mt-0.5 text-xs text-muted-foreground">

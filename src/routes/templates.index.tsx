@@ -110,19 +110,19 @@ function TemplatesPage() {
         icon={<FileText className="h-5 w-5" />}
       />
 
-      <main className="mx-auto max-w-[1400px] space-y-6 px-6 py-10">
-        <div className="flex items-center justify-between">
+      <main className="mx-auto max-w-[1400px] space-y-6 px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
+        <div className="flex flex-col-reverse items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-muted-foreground">
             {data.templates.length} template(s)
           </p>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button className="gap-2">
+              <Button className="w-full gap-2 sm:w-auto">
                 <Plus className="h-4 w-4" />
                 Novo Template
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="w-[calc(100vw-1rem)] max-w-lg sm:w-[calc(100vw-2rem)]">
               <DialogHeader>
                 <DialogTitle>Novo Template</DialogTitle>
                 <DialogDescription>Defina o nome e o prazo base.</DialogDescription>
@@ -223,7 +223,7 @@ function TemplatesPage() {
       </main>
 
       <Dialog open={!!editId} onOpenChange={(o) => !o && setEditId(null)}>
-        <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
+        <DialogContent className="w-[calc(100vw-1rem)] max-h-[90vh] max-w-3xl overflow-y-auto sm:w-[calc(100vw-2rem)]">
           {editingTemplate && (
             <TemplateEditor
               template={editingTemplate}
