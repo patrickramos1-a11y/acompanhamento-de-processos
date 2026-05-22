@@ -462,8 +462,9 @@ function Painel() {
         {/* Últimas tramitações */}
         <section>
           <SectionTitle icon={<Clock className="h-4 w-4" />} title="Últimas tramitações" />
-          <div className="rounded-lg border border-border bg-card">
+          <div className="max-h-[600px] overflow-auto rounded-lg border border-border bg-card">
             <ul className="divide-y divide-border">
+
               {ultimasTramitacoes.map((t) => {
                 const proc = processos.find((p) => p.id === t.processo_id);
                 const empresa = proc ? empresaMap.get(proc.empresa_id) : null;
