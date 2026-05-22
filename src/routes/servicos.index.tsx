@@ -316,24 +316,24 @@ function ServicosPage() {
             const atrasado = s._vis.atrasado || (s.status !== "concluido" && parseISO(s.data_prevista_atual) < now);
 
             return (
-              <div key={s.id} className="surface-card rounded-xl p-4">
-                <div className="flex items-center gap-3">
-                  <button onClick={() => toggle(s.id)} className="text-muted-foreground hover:text-foreground">
+              <div key={s.id} className="surface-card rounded-xl p-3 sm:p-4">
+                <div className="flex items-start gap-2 sm:items-center sm:gap-3">
+                  <button onClick={() => toggle(s.id)} className="mt-1 text-muted-foreground hover:text-foreground sm:mt-0">
                     {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                   </button>
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent-soft text-accent-foreground">
+                  <div className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent-soft text-accent-foreground sm:flex">
                     <Building2 className="h-4 w-4" />
                   </div>
-                  <div className="flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-1.5">
                       <Link
                         to="/servicos/$id"
                         params={{ id: s.id }}
-                        className="font-semibold text-foreground transition-colors hover:text-primary"
+                        className="break-words font-semibold text-foreground transition-colors hover:text-primary"
                       >
                         {s.nome}
                       </Link>
-                      <Badge variant="outline">{empresa?.nome ?? "—"}</Badge>
+                      <Badge variant="outline" className="max-w-full truncate">{empresa?.nome ?? "—"}</Badge>
                       <StatusBadge status={s.status} atrasado={atrasado} />
                     </div>
                     <p className="mt-0.5 text-xs text-muted-foreground">
