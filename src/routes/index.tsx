@@ -203,9 +203,9 @@ function Painel() {
       />
 
 
-      <main className="mx-auto max-w-[1400px] space-y-10 px-6 py-10">
+      <main className="mx-auto max-w-[1400px] space-y-8 px-4 py-6 sm:space-y-10 sm:px-6 sm:py-10 lg:px-8">
         {/* KPIs */}
-        <section className="grid animate-fade-in gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <section className="grid animate-fade-in gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
           <KPI icon={<FileText />} label="Total de processos" value={kpis.total} tone="default" />
           <KPI icon={<Activity />} label="Em andamento" value={kpis.ativos} tone="info" total={kpis.total} />
           <KPI icon={<CheckCircle2 />} label="Concluídos" value={kpis.concluidos} tone="success" total={kpis.total} />
