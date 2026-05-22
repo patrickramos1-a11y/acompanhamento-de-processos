@@ -201,9 +201,9 @@ function ServicosPage() {
         icon={<ClipboardList className="h-5 w-5" />}
       />
 
-      <main className="mx-auto max-w-[1400px] space-y-6 px-6 py-10">
+      <main className="mx-auto max-w-[1400px] space-y-6 px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
         {/* KPIs */}
-        <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <section className="grid gap-3 grid-cols-2 sm:gap-4 lg:grid-cols-4">
           <Kpi icon={<ClipboardList />} label="Serviços" value={kpis.servicos} tone="default" />
           <Kpi icon={<Check />} label="Concluídas" value={kpis.concluidas} tone="success" />
           <Kpi icon={<AlertTriangle />} label="Atrasadas" value={kpis.atrasadas} tone="warning" />
@@ -211,7 +211,7 @@ function ServicosPage() {
         </section>
 
         {/* Filtros */}
-        <section className="glass flex flex-wrap items-center gap-2 rounded-xl p-3">
+        <section className="glass grid gap-2 rounded-xl p-3 sm:flex sm:flex-wrap sm:items-center sm:gap-2">
           <Select value={String(filterMonth)} onValueChange={(v) => setFilterMonth(Number(v))}>
             <SelectTrigger className="h-9 w-[130px]"><SelectValue /></SelectTrigger>
             <SelectContent>
