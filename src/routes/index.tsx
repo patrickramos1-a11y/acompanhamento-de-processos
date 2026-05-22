@@ -75,9 +75,13 @@ function Painel() {
   const [empresaFiltro, setEmpresaFiltro] = useState<string>("");
   const [statusFiltro, setStatusFiltro] = useState<string>("");
   const [tipoFiltro, setTipoFiltro] = useState<string>("");
+  const [responsavelFiltro, setResponsavelFiltro] = useState<string>("");
+  const [mesFiltro, setMesFiltro] = useState<string>("");
+  const [anoFiltro, setAnoFiltro] = useState<string>("");
   const [empresaModal, setEmpresaModal] = useState<string | null>(null);
   const [processoModal, setProcessoModal] = useState<string | null>(null);
   const [modalStatusFiltro, setModalStatusFiltro] = useState<string>("");
+
 
   const empresaMap = useMemo(() => new Map(empresas.map((e) => [e.id, e])), [empresas]);
   const grupoMap = useMemo(() => new Map(grupos.map((g) => [g.id, g])), [grupos]);
@@ -141,12 +145,31 @@ function Painel() {
       .sort((a, b) => b.total - a.total);
   }, [tipos, processos]);
 
+  const responsaveis = useMemo(() => {
+    const s = new Set<string>();
+    for (const p of processos) if (p.responsavel) s.add(p.responsavel);
+    return Array.from(s).sort((a, b) => a.localeCompare(b));
+  }, [processos]);
+
+  const anos = useMemo(() => {
+    const s = new Set<string>();
+    for (const p of processos) if (p.data_protocolo) s.add(p.data_protocolo.slice(0, 4));
+    return Array.from(s).sort((a, b) => b.localeCompare(a));
+  }, [processos]);
+
   const processosFiltrados = useMemo(() => {
     const q = search.trim().toLowerCase();
     return processos.filter((p) => {
       if (empresaFiltro && p.empresa_id !== empresaFiltro) return false;
       if (statusFiltro && p.status !== statusFiltro) return false;
       if (tipoFiltro && p.tipo_processo_id !== tipoFiltro) return false;
+      if (responsavelFiltro && p.responsavel !== responsavelFiltro) return false;
+      if (anoFiltro) {
+        if (!p.data_protocolo || p.data_protocolo.slice(0, 4) !== anoFiltro) return false;
+      }
+      if (mesFiltro) {
+        if (!p.data_protocolo || p.data_protocolo.slice(5, 7) !== mesFiltro) return false;
+      }
       if (q) {
         const empresa = empresaMap.get(p.empresa_id)?.nome ?? "";
         const hay = `${p.nome} ${p.numero_protocolo ?? ""} ${empresa} ${p.responsavel ?? ""}`.toLowerCase();
@@ -154,9 +177,10 @@ function Painel() {
       }
       return true;
     });
-  }, [processos, search, empresaFiltro, statusFiltro, tipoFiltro, empresaMap]);
+  }, [processos, search, empresaFiltro, statusFiltro, tipoFiltro, responsavelFiltro, mesFiltro, anoFiltro, empresaMap]);
 
   const ultimasTramitacoes = tramitacoes.slice(0, 12);
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -330,19 +354,59 @@ function Painel() {
                 </option>
               ))}
             </select>
-            {(search || empresaFiltro || tipoFiltro || statusFiltro) && (
+            <select
+              value={responsavelFiltro}
+              onChange={(e) => setResponsavelFiltro(e.target.value)}
+              className="rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring"
+            >
+              <option value="">Todos os responsáveis</option>
+              {responsaveis.map((r) => (
+                <option key={r} value={r}>
+                  {r}
+                </option>
+              ))}
+            </select>
+            <select
+              value={mesFiltro}
+              onChange={(e) => setMesFiltro(e.target.value)}
+              className="rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring"
+            >
+              <option value="">Todos os meses</option>
+              {[
+                ["01", "Janeiro"], ["02", "Fevereiro"], ["03", "Março"], ["04", "Abril"],
+                ["05", "Maio"], ["06", "Junho"], ["07", "Julho"], ["08", "Agosto"],
+                ["09", "Setembro"], ["10", "Outubro"], ["11", "Novembro"], ["12", "Dezembro"],
+              ].map(([v, l]) => (
+                <option key={v} value={v}>{l}</option>
+              ))}
+            </select>
+            <select
+              value={anoFiltro}
+              onChange={(e) => setAnoFiltro(e.target.value)}
+              className="rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring"
+            >
+              <option value="">Todos os anos</option>
+              {anos.map((a) => (
+                <option key={a} value={a}>{a}</option>
+              ))}
+            </select>
+            {(search || empresaFiltro || tipoFiltro || statusFiltro || responsavelFiltro || mesFiltro || anoFiltro) && (
               <button
                 onClick={() => {
                   setSearch("");
                   setEmpresaFiltro("");
                   setTipoFiltro("");
                   setStatusFiltro("");
+                  setResponsavelFiltro("");
+                  setMesFiltro("");
+                  setAnoFiltro("");
                 }}
                 className="rounded-md border border-input bg-background px-3 py-2 text-sm text-muted-foreground hover:text-foreground"
               >
                 Limpar filtros
               </button>
             )}
+
           </div>
 
           <div className="overflow-hidden rounded-lg border border-border bg-card">
