@@ -74,12 +74,15 @@ function Painel() {
   const { empresas, grupos, tipos, etapas, processos, tramitacoes } = data;
 
   const [search, setSearch] = useState("");
-  const [empresaFiltro, setEmpresaFiltro] = useState<string>("");
-  const [statusFiltro, setStatusFiltro] = useState<string>("");
-  const [tipoFiltro, setTipoFiltro] = useState<string>("");
-  const [responsavelFiltro, setResponsavelFiltro] = useState<string>("");
-  const [mesFiltro, setMesFiltro] = useState<string>("");
-  const [anoFiltro, setAnoFiltro] = useState<string>("");
+  const mesAtual = String(new Date().getMonth() + 1).padStart(2, "0");
+  const anoAtual = String(new Date().getFullYear());
+  const [empresaFiltro, setEmpresaFiltro] = useState<string[]>([]);
+  const [statusFiltro, setStatusFiltro] = useState<string[]>([]);
+  const [tipoFiltro, setTipoFiltro] = useState<string[]>([]);
+  const [responsavelFiltro, setResponsavelFiltro] = useState<string[]>([]);
+  const [mesFiltro, setMesFiltro] = useState<string[]>([mesAtual]);
+  const [anoFiltro, setAnoFiltro] = useState<string[]>([anoAtual]);
+
   const [empresaModal, setEmpresaModal] = useState<string | null>(null);
   const [processoModal, setProcessoModal] = useState<string | null>(null);
   const [modalStatusFiltro, setModalStatusFiltro] = useState<string>("");
