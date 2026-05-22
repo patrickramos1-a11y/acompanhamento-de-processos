@@ -172,6 +172,245 @@ export type Database = {
           },
         ]
       }
+      servico_tarefas: {
+        Row: {
+          criado_em: string
+          data_conclusao: string | null
+          data_prevista: string | null
+          depende_de_servico_tarefa_id: string | null
+          duracao_dias: number
+          fase_nome: string
+          gerar_apos_conclusao: boolean
+          id: string
+          impacta_prazo: boolean
+          ordem: number
+          servico_id: string
+          status: Database["public"]["Enums"]["status_tarefa"]
+          template_tarefa_id: string | null
+          tipo_prazo: Database["public"]["Enums"]["tipo_prazo"]
+          titulo: string
+        }
+        Insert: {
+          criado_em?: string
+          data_conclusao?: string | null
+          data_prevista?: string | null
+          depende_de_servico_tarefa_id?: string | null
+          duracao_dias?: number
+          fase_nome?: string
+          gerar_apos_conclusao?: boolean
+          id?: string
+          impacta_prazo?: boolean
+          ordem?: number
+          servico_id: string
+          status?: Database["public"]["Enums"]["status_tarefa"]
+          template_tarefa_id?: string | null
+          tipo_prazo?: Database["public"]["Enums"]["tipo_prazo"]
+          titulo: string
+        }
+        Update: {
+          criado_em?: string
+          data_conclusao?: string | null
+          data_prevista?: string | null
+          depende_de_servico_tarefa_id?: string | null
+          duracao_dias?: number
+          fase_nome?: string
+          gerar_apos_conclusao?: boolean
+          id?: string
+          impacta_prazo?: boolean
+          ordem?: number
+          servico_id?: string
+          status?: Database["public"]["Enums"]["status_tarefa"]
+          template_tarefa_id?: string | null
+          tipo_prazo?: Database["public"]["Enums"]["tipo_prazo"]
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "servico_tarefas_depende_de_servico_tarefa_id_fkey"
+            columns: ["depende_de_servico_tarefa_id"]
+            isOneToOne: false
+            referencedRelation: "servico_tarefas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "servico_tarefas_servico_id_fkey"
+            columns: ["servico_id"]
+            isOneToOne: false
+            referencedRelation: "servicos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      servicos: {
+        Row: {
+          atualizado_em: string
+          criado_em: string
+          data_inicial: string
+          data_prevista_atual: string
+          data_prevista_base: string
+          empresa_id: string
+          id: string
+          nome: string
+          prazo_base_dias: number
+          status: Database["public"]["Enums"]["status_servico"]
+          template_id: string | null
+        }
+        Insert: {
+          atualizado_em?: string
+          criado_em?: string
+          data_inicial: string
+          data_prevista_atual: string
+          data_prevista_base: string
+          empresa_id: string
+          id?: string
+          nome: string
+          prazo_base_dias?: number
+          status?: Database["public"]["Enums"]["status_servico"]
+          template_id?: string | null
+        }
+        Update: {
+          atualizado_em?: string
+          criado_em?: string
+          data_inicial?: string
+          data_prevista_atual?: string
+          data_prevista_base?: string
+          empresa_id?: string
+          id?: string
+          nome?: string
+          prazo_base_dias?: number
+          status?: Database["public"]["Enums"]["status_servico"]
+          template_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "servicos_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "servicos_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      template_fases: {
+        Row: {
+          criado_em: string
+          id: string
+          nome: string
+          ordem: number
+          template_id: string
+        }
+        Insert: {
+          criado_em?: string
+          id?: string
+          nome: string
+          ordem?: number
+          template_id: string
+        }
+        Update: {
+          criado_em?: string
+          id?: string
+          nome?: string
+          ordem?: number
+          template_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "template_fases_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      template_tarefas: {
+        Row: {
+          criado_em: string
+          depende_de_template_tarefa_id: string | null
+          duracao_dias: number
+          fase_id: string
+          gerar_apos_conclusao: boolean
+          id: string
+          impacta_prazo: boolean
+          ordem: number
+          tipo_prazo: Database["public"]["Enums"]["tipo_prazo"]
+          titulo: string
+        }
+        Insert: {
+          criado_em?: string
+          depende_de_template_tarefa_id?: string | null
+          duracao_dias?: number
+          fase_id: string
+          gerar_apos_conclusao?: boolean
+          id?: string
+          impacta_prazo?: boolean
+          ordem?: number
+          tipo_prazo?: Database["public"]["Enums"]["tipo_prazo"]
+          titulo: string
+        }
+        Update: {
+          criado_em?: string
+          depende_de_template_tarefa_id?: string | null
+          duracao_dias?: number
+          fase_id?: string
+          gerar_apos_conclusao?: boolean
+          id?: string
+          impacta_prazo?: boolean
+          ordem?: number
+          tipo_prazo?: Database["public"]["Enums"]["tipo_prazo"]
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "template_tarefas_depende_de_template_tarefa_id_fkey"
+            columns: ["depende_de_template_tarefa_id"]
+            isOneToOne: false
+            referencedRelation: "template_tarefas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "template_tarefas_fase_id_fkey"
+            columns: ["fase_id"]
+            isOneToOne: false
+            referencedRelation: "template_fases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      templates: {
+        Row: {
+          atualizado_em: string
+          criado_em: string
+          descricao: string | null
+          id: string
+          nome: string
+          prazo_base_dias: number
+        }
+        Insert: {
+          atualizado_em?: string
+          criado_em?: string
+          descricao?: string | null
+          id?: string
+          nome: string
+          prazo_base_dias?: number
+        }
+        Update: {
+          atualizado_em?: string
+          criado_em?: string
+          descricao?: string | null
+          id?: string
+          nome?: string
+          prazo_base_dias?: number
+        }
+        Relationships: []
+      }
       tipos_processo: {
         Row: {
           criado_em: string
@@ -259,6 +498,9 @@ export type Database = {
     }
     Enums: {
       processo_status: "ativo" | "concluido" | "cancelado" | "suspenso"
+      status_servico: "em_andamento" | "concluido" | "cancelado"
+      status_tarefa: "pendente" | "concluida" | "bloqueada"
+      tipo_prazo: "RELATIVO_AO_INICIO" | "RELATIVO_A_CONCLUSAO_DE_TAREFA"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -387,6 +629,9 @@ export const Constants = {
   public: {
     Enums: {
       processo_status: ["ativo", "concluido", "cancelado", "suspenso"],
+      status_servico: ["em_andamento", "concluido", "cancelado"],
+      status_tarefa: ["pendente", "concluida", "bloqueada"],
+      tipo_prazo: ["RELATIVO_AO_INICIO", "RELATIVO_A_CONCLUSAO_DE_TAREFA"],
     },
   },
 } as const

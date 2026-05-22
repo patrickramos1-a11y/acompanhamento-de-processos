@@ -1,79 +1,71 @@
-## Redesign visual da plataforma (referência: PROSPECÇÃO)
+## Objetivo
 
-Apenas mudanças visuais — sem tocar em filtros, queries, rotas ou lógica de dados.
+Adicionar duas novas seções ao painel — **Serviços** e **Templates** — replicando a funcionalidade do projeto "Remix of Service Flow", mas vinculando os serviços às **empresas** já existentes (não há cadastro de clientes, pois as empresas vêm da importação de planilhas).
 
-### 1. Sistema de design (`src/styles.css`)
+## Navegação
 
-- Adicionar fontes **Inter** (corpo) + **Syne** (títulos H1-H3) via `<link>` no `__root.tsx`.
-- Definir tokens em `oklch` mantendo a paleta verde mata + bege terra + âmbar (já presente), e adicionar:
-  - `--gradient-hero` (verde profundo → verde médio)
-  - `--gradient-card` (branco → bege muito claro)
-  - `--gradient-accent` (âmbar)
-  - `--shadow-sm / md / lg` com tinta verde
-  - `--accent` reposicionado como âmbar (hoje está como verde claro)
-- Utilitários novos: `.surface-card`, `.surface-elevated`, `.glass`, `.text-gradient`, animação `.animate-fade-in`.
+Adicionar uma barra de navegação no header (em `__root.tsx` ou no header já existente do `index.tsx`) com os links:
 
-### 2. Header (`src/routes/index.tsx`)
+- **Painel** (`/`) — tela atual de processos
+- **Serviços** (`/servicos`) — nova
+- **Templates** (`/templates`) — nova
 
-- Hero header alto com `--gradient-hero` de fundo, padrão sutil (radial highlight), texto em Syne.
-- Ícone do logo em cartão âmbar com glow.
-- Subtítulo em tom claro com melhor hierarquia.
-- Botão "Configurações" com tratamento `glass`.
+Mesmo visual "Verde Mata" do painel (glass, gradient hero, Syne nas headings).
 
-### 3. KPIs (4 cards superiores)
+## Banco de dados (nova migração)
 
-- Aumentar para `surface-elevated` com gradiente sutil e shadow-md.
-- Número grande em Syne (tabular).
-- Ícone dentro de bolha colorida (success/info/warning/destructive).
-- Microbarra ou delta abaixo de cada KPI (ex.: "% do total").
+Quatro tabelas novas em `public.*`, todas com RLS aberto por enquanto (mesmo padrão das tabelas atuais — sem auth no app):
 
-### 4. Cartões de empresa
+- **`templates`** — `nome`, `prazo_base_dias`, `descricao`
+- **`template_fases`** — pertence a um template — `nome`, `ordem`
+- **`template_tarefas`** — pertence a uma fase — `titulo`, `duracao_dias`, `tipo_prazo` (`RELATIVO_AO_INICIO` | `RELATIVO_A_CONCLUSAO_DE_TAREFA`), `impacta_prazo`, `depende_de_template_tarefa_id`, `gerar_apos_conclusao`
+- **`servicos`** — `empresa_id` (FK → `empresas.id`), `template_id`, `nome`, `data_inicial`, `prazo_base_dias`, `data_prevista_base`, `data_prevista_atual`, `status` (`em_andamento` | `concluido` | `cancelado`)
+- **`servico_tarefas`** — pertence a um serviço — mesmos campos da template_tarefa + `fase_nome`, `status` (`pendente` | `concluida` | `bloqueada`), `data_prevista`, `data_conclusao`
 
-- Cards com `surface-card`, hover lift (transform + shadow-lg + ring leve).
-- Cabeçalho com avatar/inicial em bolha verde, nome em Syne.
-- Stats (Total / Ativos / Concluídos) em mini-pills com cor própria.
-- Mini progress bar no rodapé do card (concluídos/total).
+Tudo com `created_at`/`updated_at` e trigger de `updated_at`.
 
-### 5. "Processos por tipo"
+## Server functions (TanStack)
 
-- Card próprio com gradiente claro, barra de progresso mais grossa e arredondada com cor por tipo.
-- Hover destacando a linha clicada (já é seletor).
+Novo arquivo `src/lib/servicos.functions.ts` com:
 
-### 6. Filtros
+- `listTemplates`, `createTemplate`, `updateTemplate`, `deleteTemplate`
+- `listServicos` (join com empresa), `criarServicoFromTemplate(empresaId, templateId, dataInicial)`, `deleteServico`
+- `concluirTarefa`, `adicionarTarefa`, `editarTarefa`, `extendTarefaDias`, `salvarServicoComoTemplate`
 
-- Cápsula `glass` com leve sombra; trigger dos multi-selects ganha estilo "pill" com ícone à esquerda.
-- Search input com ícone integrado e ring verde no foco.
-- Badge de contagem com cor `primary` em vez de neutro.
+E `src/lib/dateCalculations.ts` portado do projeto referência (recálculo de datas previstas com base em dependências + `tipo_prazo` + `impacta_prazo`).
 
-### 7. Tabela de processos
+## Rotas
 
-- Cabeçalho com gradiente verde escuro suave e texto âmbar claro (em vez de verde chapado atual).
-- Linhas com hover `bg-accent/40` e zebra muito sutil.
-- Badges de status usando classes `.status-*` (alta/média/baixa fidelidade) com bordas finas.
-- Barra de progresso mais grossa (h-2) com cantos arredondados e fundo gradient por etapa.
+- **`src/routes/servicos.tsx`** — lista de serviços com:
+  - 4 KPI cards (Serviços, Concluídas, Atrasadas, Pendentes) calculadas a partir das tarefas filtradas
+  - Filtros: mês, ano, empresa (multi-select), status do serviço, status de tarefa
+  - Lista de serviços expansíveis mostrando tarefas (concluir / editar / +dias / cronograma)
+  - Botão "Novo Serviço" → diálogo escolhe empresa + template + data inicial
+  - Botão "Salvar como template"
+- **`src/routes/servicos.$id.tsx`** — detalhe do serviço (cronograma completo, gerenciar tarefas)
+- **`src/routes/templates.tsx`** — lista de templates (criar / excluir / abrir)
+- **`src/routes/templates.$id.tsx`** — editor de template (fases + tarefas, dependências, prazos)
 
-### 8. Divisor "Histórico" + Últimas tramitações
+Cada rota com `head()` próprio, `errorComponent`, `notFoundComponent`, loader via TanStack Query (`ensureQueryData` + `useSuspenseQuery`).
 
-- Divisor já existe — ajustar pill para usar `surface-elevated` com âmbar.
-- Cartão da seção em `bg-gradient-card` com header destacado.
-- Cada item de tramitação com avatar da empresa (inicial em bolha), badge de status colorido, "data" em chip âmbar discreto.
+## Diferenças vs. projeto referência
 
-### 9. Footer
+- **Sem rota `/clientes`** nem cadastro — o seletor de "cliente" no diálogo de novo serviço usa as **empresas existentes** (com busca por nome/CNPJ).
+- Visual completo no estilo Verde Mata já implementado nesta plataforma (Syne nas headings, surface-elevated/glass nos containers, gradient-hero no header).
+- Stack atual: TanStack Start + Supabase via server functions (não zustand/react-router-dom).
 
-- Manter, mas em tipografia menor + ícone discreto.
+## Detalhes técnicos
 
-### 10. Refinos transversais
+- Tipos compartilhados em `src/types/servicos.ts` (TipoPrazo, StatusTarefa, StatusServico, Template, Servico, etc.).
+- `dateCalculations.ts` puro (sem dependências de runtime) — usado tanto no servidor quanto no cliente.
+- Componente `CronogramaServico` portado para `src/components/cronograma-servico.tsx`.
+- Uso de `Dialog`, `AlertDialog`, `Popover`, `Command`, `Switch`, `Checkbox`, `Collapsible`, `Textarea` — todos já presentes em `src/components/ui/`.
+- Invalidation: `router.invalidate()` após mutações para revalidar loaders.
 
-- Cantos: trocar `rounded-lg` → `rounded-xl` em superfícies principais.
-- Animação `animate-fade-in` em todos os blocos no mount.
-- Scrollbar custom (já no PROSPECÇÃO) portada.
-- Spacing geral: respiros maiores entre seções (gap-8 → gap-10).
+## Entregáveis
 
-### Arquivos afetados
-
-- `src/styles.css` (tokens, fontes, utilitários, scrollbar, animações)
-- `src/routes/__root.tsx` (link das fontes Google)
-- `src/routes/index.tsx` (header, KPIs, cards empresa, processos por tipo, filtros, tabela, tramitações)
-- Possivelmente pequenos ajustes em `src/components/multi-select.tsx` para o estilo pill
-
-Sem mudanças em rotas, schema, server functions ou lógica de filtragem.
+1. Migração SQL com as 5 tabelas + RLS + triggers
+2. `src/lib/servicos.functions.ts` + `src/lib/dateCalculations.ts` + `src/types/servicos.ts`
+3. 4 novas rotas (`servicos`, `servicos.$id`, `templates`, `templates.$id`)
+4. Componente `CronogramaServico`
+5. Header com navegação entre Painel / Serviços / Templates
