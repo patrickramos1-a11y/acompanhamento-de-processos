@@ -416,7 +416,81 @@ function Painel() {
           </div>
 
           <div className="surface-elevated overflow-hidden rounded-2xl">
-            <div className="max-h-[640px] overflow-auto">
+            {/* Mobile: cards */}
+            <div className="md:hidden">
+              <div className="max-h-[640px] divide-y divide-border/60 overflow-auto">
+                {processosFiltrados.length === 0 && (
+                  <div className="px-4 py-14 text-center text-sm text-muted-foreground">
+                    Nenhum processo encontrado com os filtros aplicados.
+                  </div>
+                )}
+                {processosFiltrados.map((p) => {
+                  const empresa = empresaMap.get(p.empresa_id);
+                  const tipo = tipoMap.get(p.tipo_processo_id);
+                  const etapaAtual = p.etapa_atual_id ? etapaMap.get(p.etapa_atual_id) : null;
+                  const etapasDoTipo = etapasByTipo.get(p.tipo_processo_id) ?? [];
+                  const idxAtual = etapaAtual
+                    ? etapasDoTipo.findIndex((e) => e.id === etapaAtual.id)
+                    : -1;
+                  const total = etapasDoTipo.length;
+                  const progresso =
+                    p.status === "concluido"
+                      ? 100
+                      : total > 0 && idxAtual >= 0
+                        ? ((idxAtual + 1) / total) * 100
+                        : 0;
+                  const parado = isParado(p);
+                  return (
+                    <div key={p.id} className="space-y-2 px-4 py-3.5">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5">
+                            <p className="truncate font-medium text-card-foreground">{empresa?.nome ?? "—"}</p>
+                            {parado && <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-warning" />}
+                          </div>
+                          <p className="truncate text-xs text-muted-foreground">{p.nome}</p>
+                        </div>
+                        <span
+                          className={`inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${STATUS_CLASS[p.status]}`}
+                        >
+                          {p.status_detalhado ?? STATUS_LABEL[p.status]}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+                        {tipo?.nome && <span className="truncate">{tipo.nome}</span>}
+                        {p.numero_protocolo && <span className="font-mono">#{p.numero_protocolo}</span>}
+                        {p.data_protocolo && <span>{fmtDate(p.data_protocolo)}</span>}
+                        {p.responsavel && <span>{p.responsavel}</span>}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
+                          <div
+                            className="h-full rounded-full transition-all"
+                            style={{
+                              width: `${progresso}%`,
+                              background:
+                                p.status === "concluido"
+                                  ? "var(--success)"
+                                  : etapaAtual?.cor ?? "var(--primary)",
+                            }}
+                          />
+                        </div>
+                        <span className="text-[10px] font-medium tabular-nums text-muted-foreground">
+                          {idxAtual >= 0 && total > 0
+                            ? `${idxAtual + 1}/${total}`
+                            : p.status === "concluido"
+                              ? `${total}/${total}`
+                              : "—"}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Desktop/tablet: table */}
+            <div className="hidden max-h-[640px] overflow-auto md:block">
               <table className="w-full text-sm">
                 <thead className="sticky top-0 z-10 bg-gradient-hero text-sidebar-foreground">
                   <tr className="text-left">
