@@ -918,11 +918,11 @@ function EmpresaProcessosModal({
 
   return (
     <Dialog open={!!empresaId} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-[1100px] p-0">
-        <DialogHeader className="border-b border-border bg-sidebar px-6 py-4 text-sidebar-foreground">
+      <DialogContent className="w-[calc(100vw-1rem)] max-w-[1100px] p-0 sm:w-[calc(100vw-2rem)]">
+        <DialogHeader className="border-b border-border bg-sidebar px-4 py-3.5 text-sidebar-foreground sm:px-6 sm:py-4">
           <DialogTitle className="flex items-center gap-2 text-base">
             <Building2 className="h-4 w-4" />
-            {empresa?.nome ?? "Empresa"}
+            <span className="truncate">{empresa?.nome ?? "Empresa"}</span>
           </DialogTitle>
           <DialogDescription className="text-sidebar-foreground/70">
             {grupo ? grupo.nome + " · " : ""}
@@ -930,7 +930,7 @@ function EmpresaProcessosModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="border-b border-border bg-muted/30 px-6 py-3">
+        <div className="border-b border-border bg-muted/30 px-4 py-3 sm:px-6">
           <div className="flex flex-wrap gap-2">
             {STATUS_TABS.map((tab) => {
               const active = statusFiltro === tab.key;
