@@ -319,104 +319,85 @@ function Painel() {
           </div>
 
           {/* Filters */}
-          <div className="mb-3 flex flex-wrap gap-2 rounded-lg border border-border bg-card p-3">
-            <div className="relative min-w-[240px] flex-1">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <div className="mb-3 flex flex-wrap items-center gap-1.5 rounded-lg border border-border bg-card p-2">
+            <div className="relative min-w-[220px] flex-1">
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Buscar por nome, protocolo, empresa ou responsável..."
-                className="w-full rounded-md border border-input bg-background py-2 pl-9 pr-3 text-sm outline-none focus:border-ring focus:ring-1 focus:ring-ring"
+                placeholder="Buscar por nome, protocolo, empresa..."
+                className="h-8 w-full rounded-md border border-input bg-background pl-8 pr-2 text-xs outline-none focus:border-ring focus:ring-1 focus:ring-ring"
               />
             </div>
-            <select
-              value={empresaFiltro}
-              onChange={(e) => setEmpresaFiltro(e.target.value)}
-              className="rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring"
-            >
-              <option value="">Todas as empresas</option>
-              {empresas.map((e) => (
-                <option key={e.id} value={e.id}>
-                  {e.nome}
-                </option>
-              ))}
-            </select>
-            <select
-              value={tipoFiltro}
-              onChange={(e) => setTipoFiltro(e.target.value)}
-              className="rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring"
-            >
-              <option value="">Todos os tipos</option>
-              {tipos.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.nome}
-                </option>
-              ))}
-            </select>
-            <select
-              value={statusFiltro}
-              onChange={(e) => setStatusFiltro(e.target.value)}
-              className="rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring"
-            >
-              <option value="">Todos os status</option>
-              {Object.entries(STATUS_LABEL).map(([v, l]) => (
-                <option key={v} value={v}>
-                  {l}
-                </option>
-              ))}
-            </select>
-            <select
-              value={responsavelFiltro}
-              onChange={(e) => setResponsavelFiltro(e.target.value)}
-              className="rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring"
-            >
-              <option value="">Todos os responsáveis</option>
-              {responsaveis.map((r) => (
-                <option key={r} value={r}>
-                  {r}
-                </option>
-              ))}
-            </select>
-            <select
-              value={mesFiltro}
-              onChange={(e) => setMesFiltro(e.target.value)}
-              className="rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring"
-            >
-              <option value="">Todos os meses</option>
-              {[
+            <MultiSelect
+              label="Todas as empresas"
+              searchPlaceholder="Buscar empresa..."
+              options={empresas.map((e) => ({ value: e.id, label: e.nome }))}
+              selected={empresaFiltro}
+              onChange={setEmpresaFiltro}
+            />
+            <MultiSelect
+              label="Todos os tipos"
+              searchPlaceholder="Buscar tipo..."
+              options={tipos.map((t) => ({ value: t.id, label: t.nome }))}
+              selected={tipoFiltro}
+              onChange={setTipoFiltro}
+            />
+            <MultiSelect
+              label="Todos os status"
+              searchPlaceholder="Buscar status..."
+              options={Object.entries(STATUS_LABEL).map(([v, l]) => ({ value: v, label: l }))}
+              selected={statusFiltro}
+              onChange={setStatusFiltro}
+            />
+            <MultiSelect
+              label="Todos os responsáveis"
+              searchPlaceholder="Buscar responsável..."
+              options={responsaveis.map((r) => ({ value: r, label: r }))}
+              selected={responsavelFiltro}
+              onChange={setResponsavelFiltro}
+            />
+            <MultiSelect
+              label="Todos os meses"
+              searchPlaceholder="Buscar mês..."
+              options={[
                 ["01", "Janeiro"], ["02", "Fevereiro"], ["03", "Março"], ["04", "Abril"],
                 ["05", "Maio"], ["06", "Junho"], ["07", "Julho"], ["08", "Agosto"],
                 ["09", "Setembro"], ["10", "Outubro"], ["11", "Novembro"], ["12", "Dezembro"],
-              ].map(([v, l]) => (
-                <option key={v} value={v}>{l}</option>
-              ))}
-            </select>
-            <select
-              value={anoFiltro}
-              onChange={(e) => setAnoFiltro(e.target.value)}
-              className="rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring"
-            >
-              <option value="">Todos os anos</option>
-              {anos.map((a) => (
-                <option key={a} value={a}>{a}</option>
-              ))}
-            </select>
-            {(search || empresaFiltro || tipoFiltro || statusFiltro || responsavelFiltro || mesFiltro || anoFiltro) && (
+              ].map(([v, l]) => ({ value: v, label: l }))}
+              selected={mesFiltro}
+              onChange={setMesFiltro}
+            />
+            <MultiSelect
+              label="Todos os anos"
+              searchPlaceholder="Buscar ano..."
+              options={anos.map((a) => ({ value: a, label: a }))}
+              selected={anoFiltro}
+              onChange={setAnoFiltro}
+            />
+            {(search ||
+              empresaFiltro.length ||
+              tipoFiltro.length ||
+              statusFiltro.length ||
+              responsavelFiltro.length ||
+              mesFiltro.join(",") !== mesAtual ||
+              anoFiltro.join(",") !== anoAtual) && (
               <button
                 onClick={() => {
                   setSearch("");
-                  setEmpresaFiltro("");
-                  setTipoFiltro("");
-                  setStatusFiltro("");
-                  setResponsavelFiltro("");
-                  setMesFiltro("");
-                  setAnoFiltro("");
+                  setEmpresaFiltro([]);
+                  setTipoFiltro([]);
+                  setStatusFiltro([]);
+                  setResponsavelFiltro([]);
+                  setMesFiltro([mesAtual]);
+                  setAnoFiltro([anoAtual]);
                 }}
-                className="rounded-md border border-input bg-background px-3 py-2 text-sm text-muted-foreground hover:text-foreground"
+                className="h-8 rounded-md border border-input bg-background px-2.5 text-xs text-muted-foreground hover:text-foreground"
               >
                 Limpar filtros
               </button>
             )}
+
 
           </div>
 
