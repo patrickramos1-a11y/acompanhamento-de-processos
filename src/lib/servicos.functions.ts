@@ -215,6 +215,7 @@ export const criarServicoFromTemplate = createServerFn({ method: "POST" })
     const rows = (ttarefas ?? []).map((tt, idx) => {
       const id = idMap.get(tt.id)!;
       const dependeId = tt.depende_de_template_tarefa_id ? (idMap.get(tt.depende_de_template_tarefa_id) ?? null) : null;
+      const status: "pendente" | "bloqueada" = tt.gerar_apos_conclusao ? "bloqueada" : dependeId ? "bloqueada" : "pendente";
       return {
         id,
         servico_id: srv.id,
@@ -225,13 +226,14 @@ export const criarServicoFromTemplate = createServerFn({ method: "POST" })
         impacta_prazo: tt.impacta_prazo,
         depende_de_servico_tarefa_id: dependeId,
         gerar_apos_conclusao: tt.gerar_apos_conclusao,
-        status: tt.gerar_apos_conclusao ? "bloqueada" : dependeId ? "bloqueada" : "pendente",
+        status,
         data_prevista: null,
         data_conclusao: null,
         template_tarefa_id: tt.id,
         ordem: idx,
       };
     });
+
 
     if (rows.length > 0) {
       const { error } = await supabaseAdmin.from("servico_tarefas").insert(rows);
