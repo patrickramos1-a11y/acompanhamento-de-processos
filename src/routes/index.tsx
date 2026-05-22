@@ -1109,8 +1109,8 @@ function ProcessoTramitacoesModal({
 
   return (
     <Dialog open={!!processoId} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-[800px] p-0">
-        <DialogHeader className="border-b border-border bg-sidebar px-6 py-4 text-sidebar-foreground">
+      <DialogContent className="w-[calc(100vw-1rem)] max-w-[800px] p-0 sm:w-[calc(100vw-2rem)]">
+        <DialogHeader className="border-b border-border bg-sidebar px-4 py-3.5 text-sidebar-foreground sm:px-6 sm:py-4">
           <DialogTitle className="flex items-center gap-2 text-base">
             <ClipboardList className="h-4 w-4" />
             Acompanhamentos do processo
@@ -1138,8 +1138,8 @@ function ProcessoTramitacoesModal({
               {tramsDoProcesso.map((t) => {
                 const etapa = t.etapa_id ? etapaMap.get(t.etapa_id) : null;
                 return (
-                  <li key={t.id} className="flex gap-4 px-6 py-4 hover:bg-muted/30">
-                    <div className="w-24 shrink-0 text-xs text-muted-foreground">
+                  <li key={t.id} className="flex flex-col gap-1 px-4 py-3.5 hover:bg-muted/30 sm:flex-row sm:gap-4 sm:px-6 sm:py-4">
+                    <div className="shrink-0 text-xs font-medium text-muted-foreground sm:w-24">
                       {fmtDate(t.data_evento)}
                     </div>
                     <div className="min-w-0 flex-1">
