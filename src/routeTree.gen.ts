@@ -37,14 +37,14 @@ const ServicosIndexRoute = ServicosIndexRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const TemplatesIdRoute = TemplatesIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => TemplatesRoute,
+  id: '/templates/$id',
+  path: '/templates/$id',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ServicosIdRoute = ServicosIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => ServicosRoute,
+  id: '/servicos/$id',
+  path: '/servicos/$id',
+  getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -102,6 +102,8 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ConfiguracoesRoute: typeof ConfiguracoesRoute
+  ServicosIdRoute: typeof ServicosIdRoute
+  TemplatesIdRoute: typeof TemplatesIdRoute
   ServicosIndexRoute: typeof ServicosIndexRoute
   TemplatesIndexRoute: typeof TemplatesIndexRoute
 }
@@ -138,17 +140,17 @@ declare module '@tanstack/react-router' {
     }
     '/templates/$id': {
       id: '/templates/$id'
-      path: '/$id'
+      path: '/templates/$id'
       fullPath: '/templates/$id'
       preLoaderRoute: typeof TemplatesIdRouteImport
-      parentRoute: typeof TemplatesRoute
+      parentRoute: typeof rootRouteImport
     }
     '/servicos/$id': {
       id: '/servicos/$id'
-      path: '/$id'
+      path: '/servicos/$id'
       fullPath: '/servicos/$id'
       preLoaderRoute: typeof ServicosIdRouteImport
-      parentRoute: typeof ServicosRoute
+      parentRoute: typeof rootRouteImport
     }
   }
 }
@@ -156,19 +158,11 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ConfiguracoesRoute: ConfiguracoesRoute,
+  ServicosIdRoute: ServicosIdRoute,
+  TemplatesIdRoute: TemplatesIdRoute,
   ServicosIndexRoute: ServicosIndexRoute,
   TemplatesIndexRoute: TemplatesIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
