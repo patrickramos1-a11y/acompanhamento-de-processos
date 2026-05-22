@@ -521,10 +521,31 @@ function Painel() {
           </div>
         </section>
 
+        {/* Divisor entre seções */}
+        <div className="my-10 flex items-center gap-4" aria-hidden="true">
+          <div className="h-px flex-1 bg-border" />
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/60 px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+            <Clock className="h-3 w-3" />
+            Histórico
+          </span>
+          <div className="h-px flex-1 bg-border" />
+        </div>
+
         {/* Últimas tramitações */}
-        <section>
-          <SectionTitle icon={<Clock className="h-4 w-4" />} title="Últimas tramitações" />
+        <section className="rounded-xl bg-muted/30 p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 text-primary">
+                <Clock className="h-4 w-4" />
+              </div>
+              <h2 className="text-base font-semibold tracking-tight text-foreground">
+                Últimas tramitações
+              </h2>
+              <span className="text-xs text-muted-foreground">· {ultimasTramitacoes.length}</span>
+            </div>
+          </div>
           <div className="max-h-[600px] overflow-auto rounded-lg border border-border bg-card">
+
             <ul className="divide-y divide-border">
 
               {ultimasTramitacoes.map((t) => {
