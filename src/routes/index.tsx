@@ -193,25 +193,30 @@ function Painel() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-sidebar text-sidebar-foreground">
-        <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-4 px-6 py-5">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground">
+      {/* Hero Header */}
+      <header className="relative overflow-hidden bg-gradient-hero text-sidebar-foreground">
+        <div className="absolute inset-0 bg-mesh opacity-80" aria-hidden="true" />
+        <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-sidebar-primary/50 to-transparent" />
+        <div className="relative mx-auto flex max-w-[1400px] items-center justify-between gap-4 px-6 py-7">
+          <div className="flex items-center gap-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-accent text-accent-foreground shadow-accent-glow">
               <FileText className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-lg font-semibold tracking-tight">
-                Acompanhamento de Processos Administrativos
+              <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-sidebar-foreground/60">
+                Painel Institucional
+              </p>
+              <h1 className="font-display text-2xl font-bold tracking-tight">
+                Acompanhamento de Processos
               </h1>
-              <p className="text-xs text-sidebar-foreground/70">
-                Visão consolidada de licenças, alvarás e tramitações junto a órgãos públicos
+              <p className="mt-0.5 text-xs text-sidebar-foreground/70">
+                Licenças, alvarás, anuências e tramitações junto a órgãos públicos
               </p>
             </div>
           </div>
           <Link
             to="/configuracoes"
-            className="inline-flex items-center gap-2 rounded-md border border-sidebar-foreground/20 px-3 py-1.5 text-sm text-sidebar-foreground hover:bg-sidebar-foreground/10"
+            className="glass inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium text-sidebar-foreground transition-all hover:bg-white/15"
           >
             <Settings className="h-4 w-4" />
             Configurações
@@ -219,34 +224,40 @@ function Painel() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-[1400px] space-y-8 px-6 py-8">
+      <main className="mx-auto max-w-[1400px] space-y-10 px-6 py-10">
         {/* KPIs */}
-        <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <section className="grid animate-fade-in gap-4 md:grid-cols-2 lg:grid-cols-4">
           <KPI icon={<FileText />} label="Total de processos" value={kpis.total} tone="default" />
-          <KPI icon={<Activity />} label="Em andamento" value={kpis.ativos} tone="info" />
-          <KPI icon={<CheckCircle2 />} label="Concluídos" value={kpis.concluidos} tone="success" />
+          <KPI icon={<Activity />} label="Em andamento" value={kpis.ativos} tone="info" total={kpis.total} />
+          <KPI icon={<CheckCircle2 />} label="Concluídos" value={kpis.concluidos} tone="success" total={kpis.total} />
           <KPI
             icon={<AlertTriangle />}
             label="Parados há mais de 30 dias"
             value={kpis.parados}
             tone="warning"
+            total={kpis.total}
           />
         </section>
 
         {/* Empresas + Tipos */}
-        <section>
+        <section className="animate-fade-in-up">
           <SectionTitle icon={<Building2 className="h-4 w-4" />} title="Empresas" />
-          <div className="grid grid-cols-1 gap-3 [grid-auto-flow:dense] sm:grid-cols-2 xl:grid-cols-3">
-            {/* Card "Processos por tipo" — coluna 3, ocupa 2 linhas em xl */}
-            <div className="rounded-lg border border-border bg-card p-4 xl:col-start-3 xl:row-span-2 xl:self-start">
-              <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                <TrendingUp className="h-4 w-4" />
-                Processos por tipo
+          <div className="grid grid-cols-1 gap-4 [grid-auto-flow:dense] sm:grid-cols-2 xl:grid-cols-3">
+            {/* Card "Processos por tipo" */}
+            <div className="surface-elevated rounded-2xl p-5 xl:col-start-3 xl:row-span-2 xl:self-start">
+              <div className="mb-4 flex items-center gap-2">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent-soft text-accent-foreground">
+                  <TrendingUp className="h-3.5 w-3.5" />
+                </div>
+                <span className="text-xs font-semibold uppercase tracking-wider text-foreground">
+                  Processos por tipo
+                </span>
               </div>
-              <div className="max-h-72 space-y-2 overflow-y-auto">
+              <div className="max-h-80 space-y-3 overflow-y-auto pr-1">
                 {porTipo.map((row) => {
                   const max = Math.max(...porTipo.map((r) => r.total));
                   const pct = max ? (row.total / max) * 100 : 0;
+                  const active = tipoFiltro.includes(row.tipo.id);
                   return (
                     <button
                       key={row.tipo.id}
@@ -257,16 +268,21 @@ function Painel() {
                             : [...prev, row.tipo.id],
                         )
                       }
-
-                      className="w-full text-left"
+                      className={`group -mx-2 w-full rounded-lg p-2 text-left transition-colors ${
+                        active ? "bg-primary/10" : "hover:bg-muted/60"
+                      }`}
                     >
                       <div className="flex items-center justify-between text-sm">
-                        <span className="truncate text-card-foreground">{row.tipo.nome}</span>
-                        <span className="font-medium tabular-nums">{row.total}</span>
+                        <span className={`truncate ${active ? "font-medium text-primary" : "text-card-foreground"}`}>
+                          {row.tipo.nome}
+                        </span>
+                        <span className="font-display text-sm font-semibold tabular-nums text-foreground">
+                          {row.total}
+                        </span>
                       </div>
-                      <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
+                      <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-muted">
                         <div
-                          className="h-full rounded-full bg-primary transition-all"
+                          className="h-full rounded-full bg-gradient-to-r from-primary to-primary-glow transition-all duration-500"
                           style={{ width: `${pct}%` }}
                         />
                       </div>
@@ -276,44 +292,62 @@ function Painel() {
               </div>
             </div>
 
-            {porEmpresa.map((row) => (
-              <button
-                key={row.empresa.id}
-                onClick={() => { setEmpresaModal(row.empresa.id); setModalStatusFiltro(""); }}
-                className="group rounded-lg border border-border bg-card p-4 text-left transition-all hover:border-primary hover:shadow-sm"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <h3 className="truncate font-medium text-card-foreground">
-                      {row.empresa.nome}
-                    </h3>
-                    {row.grupo && (
-                      <p className="mt-0.5 text-xs text-muted-foreground">
-                        {row.grupo.nome}
-                      </p>
+            {porEmpresa.map((row) => {
+              const pctConcluido = row.total ? (row.concluidos / row.total) * 100 : 0;
+              const initial = row.empresa.nome.trim().charAt(0).toUpperCase();
+              return (
+                <button
+                  key={row.empresa.id}
+                  onClick={() => { setEmpresaModal(row.empresa.id); setModalStatusFiltro(""); }}
+                  className="group surface-card relative overflow-hidden rounded-2xl p-5 text-left transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-[var(--shadow-md)]"
+                >
+                  <div className="absolute inset-x-0 top-0 h-0.5 origin-left scale-x-0 bg-gradient-accent transition-transform duration-300 group-hover:scale-x-100" />
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-glow font-display text-base font-bold text-primary-foreground shadow-sm">
+                      {initial}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="truncate font-display text-base font-semibold leading-tight text-card-foreground">
+                        {row.empresa.nome}
+                      </h3>
+                      {row.grupo && (
+                        <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                          {row.grupo.nome}
+                        </p>
+                      )}
+                    </div>
+                    {row.parados > 0 && (
+                      <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-warning/40 bg-warning/15 px-2 py-0.5 text-[10px] font-medium text-warning-foreground">
+                        <AlertTriangle className="h-3 w-3" />
+                        {row.parados}
+                      </span>
                     )}
                   </div>
-                  {row.parados > 0 && (
-                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-warning/40 bg-warning/15 px-2 py-0.5 text-[10px] font-medium text-warning-foreground">
-                      <AlertTriangle className="h-3 w-3" />
-                      {row.parados} parado{row.parados > 1 ? "s" : ""}
-                    </span>
-                  )}
-                </div>
-                <div className="mt-3 flex gap-4 text-xs">
-                  <Metric label="Total" value={row.total} />
-                  <Metric label="Ativos" value={row.ativos} tone="info" />
-                  <Metric label="Concluídos" value={row.concluidos} tone="success" />
-                </div>
-              </button>
-            ))}
+                  <div className="mt-4 grid grid-cols-3 gap-2">
+                    <PillMetric label="Total" value={row.total} />
+                    <PillMetric label="Ativos" value={row.ativos} tone="info" />
+                    <PillMetric label="Concluídos" value={row.concluidos} tone="success" />
+                  </div>
+                  <div className="mt-3.5">
+                    <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-muted-foreground">
+                      <span>Conclusão</span>
+                      <span className="font-medium text-foreground">{Math.round(pctConcluido)}%</span>
+                    </div>
+                    <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-success to-primary transition-all duration-500"
+                        style={{ width: `${pctConcluido}%` }}
+                      />
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </section>
 
-
-
         {/* Processos table */}
-        <section>
+        <section className="animate-fade-in-up">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <SectionTitle
               icon={<FileText className="h-4 w-4" />}
@@ -322,14 +356,14 @@ function Painel() {
           </div>
 
           {/* Filters */}
-          <div className="mb-3 flex flex-wrap items-center gap-1.5 rounded-lg border border-border bg-card p-2">
-            <div className="relative min-w-[220px] flex-1">
-              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <div className="glass mb-4 flex flex-wrap items-center gap-1.5 rounded-xl p-2 shadow-sm">
+            <div className="relative min-w-[240px] flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Buscar por nome, protocolo, empresa..."
-                className="h-8 w-full rounded-md border border-input bg-background pl-8 pr-2 text-xs outline-none focus:border-ring focus:ring-1 focus:ring-ring"
+                className="h-9 w-full rounded-lg border border-input/60 bg-background/70 pl-9 pr-3 text-xs outline-none transition-all focus:border-primary focus:bg-background focus:ring-2 focus:ring-primary/15"
               />
             </div>
             <MultiSelect
@@ -395,20 +429,17 @@ function Painel() {
                   setMesFiltro([mesAtual]);
                   setAnoFiltro([anoAtual]);
                 }}
-                className="h-8 rounded-md border border-input bg-background px-2.5 text-xs text-muted-foreground hover:text-foreground"
+                className="h-9 rounded-lg px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
               >
                 Limpar filtros
               </button>
             )}
-
-
           </div>
 
-          <div className="overflow-hidden rounded-lg border border-border bg-card">
-            <div className="max-h-[600px] overflow-auto">
+          <div className="surface-elevated overflow-hidden rounded-2xl">
+            <div className="max-h-[640px] overflow-auto">
               <table className="w-full text-sm">
-                <thead className="sticky top-0 z-10 bg-sidebar text-sidebar-foreground">
-
+                <thead className="sticky top-0 z-10 bg-gradient-hero text-sidebar-foreground">
                   <tr className="text-left">
                     <Th>Empresa</Th>
                     <Th>Tipo</Th>
@@ -423,7 +454,7 @@ function Painel() {
                 <tbody>
                   {processosFiltrados.length === 0 && (
                     <tr>
-                      <td colSpan={8} className="px-4 py-12 text-center text-muted-foreground">
+                      <td colSpan={8} className="px-4 py-14 text-center text-sm text-muted-foreground">
                         Nenhum processo encontrado com os filtros aplicados.
                       </td>
                     </tr>
@@ -451,7 +482,7 @@ function Painel() {
                     return (
                       <tr
                         key={p.id}
-                        className={`border-t border-border hover:bg-muted/40 ${dim}`}
+                        className={`border-t border-border/60 transition-colors hover:bg-accent-soft/40 ${dim}`}
                       >
                         <td className="px-4 py-3">
                           <div className="font-medium text-card-foreground">
@@ -481,9 +512,8 @@ function Painel() {
                           {fmtDate(p.data_protocolo)}
                         </td>
                         <td className="px-4 py-3">
-
                           <span
-                            className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${STATUS_CLASS[p.status]}`}
+                            className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${STATUS_CLASS[p.status]}`}
                           >
                             {p.status_detalhado ?? STATUS_LABEL[p.status]}
                           </span>
@@ -491,9 +521,9 @@ function Painel() {
                         <td className="px-4 py-3 text-muted-foreground">{p.responsavel ?? "—"}</td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2">
-                            <div className="h-1.5 w-24 overflow-hidden rounded-full bg-muted">
+                            <div className="h-2 w-24 overflow-hidden rounded-full bg-muted">
                               <div
-                                className="h-full rounded-full transition-all"
+                                className="h-full rounded-full transition-all duration-500"
                                 style={{
                                   width: `${progresso}%`,
                                   background:
@@ -503,7 +533,7 @@ function Painel() {
                                 }}
                               />
                             </div>
-                            <span className="text-[10px] tabular-nums text-muted-foreground">
+                            <span className="text-[10px] font-medium tabular-nums text-muted-foreground">
                               {idxAtual >= 0 && total > 0
                                 ? `${idxAtual + 1}/${total}`
                                 : p.status === "concluido"
@@ -521,33 +551,40 @@ function Painel() {
           </div>
         </section>
 
-        {/* Divisor entre seções */}
-        <div className="my-10 flex items-center gap-4" aria-hidden="true">
-          <div className="h-px flex-1 bg-border" />
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/60 px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+        {/* Divisor */}
+        <div className="my-2 flex items-center gap-4" aria-hidden="true">
+          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-border" />
+          <span className="surface-elevated inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-accent-foreground">
             <Clock className="h-3 w-3" />
             Histórico
           </span>
-          <div className="h-px flex-1 bg-border" />
+          <div className="h-px flex-1 bg-gradient-to-l from-transparent via-border to-border" />
         </div>
 
         {/* Últimas tramitações */}
-        <section className="rounded-xl bg-muted/30 p-4">
-          <div className="mb-3 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 text-primary">
+        <section className="surface-elevated animate-fade-in-up rounded-2xl p-5">
+          <div className="mb-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-accent text-accent-foreground shadow-accent-glow">
                 <Clock className="h-4 w-4" />
               </div>
-              <h2 className="text-base font-semibold tracking-tight text-foreground">
-                Últimas tramitações
-              </h2>
-              <span className="text-xs text-muted-foreground">· {ultimasTramitacoes.length}</span>
+              <div>
+                <h2 className="font-display text-lg font-semibold tracking-tight text-foreground">
+                  Últimas tramitações
+                </h2>
+                <p className="text-xs text-muted-foreground">
+                  {ultimasTramitacoes.length} evento{ultimasTramitacoes.length !== 1 ? "s" : ""} mais recente{ultimasTramitacoes.length !== 1 ? "s" : ""} dos filtros aplicados
+                </p>
+              </div>
             </div>
           </div>
-          <div className="max-h-[600px] overflow-auto rounded-lg border border-border bg-card">
-
-            <ul className="divide-y divide-border">
-
+          <div className="surface-card max-h-[640px] overflow-auto rounded-xl">
+            <ul className="divide-y divide-border/60">
+              {ultimasTramitacoes.length === 0 && (
+                <li className="px-6 py-12 text-center text-sm text-muted-foreground">
+                  Nenhuma tramitação para os filtros atuais.
+                </li>
+              )}
               {ultimasTramitacoes.map((t) => {
                 const proc = processos.find((p) => p.id === t.processo_id);
                 const empresa = proc ? empresaMap.get(proc.empresa_id) : null;
@@ -555,10 +592,16 @@ function Painel() {
                 const etapa = t.etapa_id ? etapaMap.get(t.etapa_id) : null;
                 const statusAtual = proc?.status;
                 const statusLabel = proc?.status_detalhado ?? (statusAtual ? STATUS_TAB_LABEL[statusAtual] ?? statusAtual : null);
+                const initial = (empresa?.nome ?? "—").trim().charAt(0).toUpperCase();
                 return (
-                  <li key={t.id} className="flex gap-4 px-4 py-3 hover:bg-muted/40">
-                    <div className="w-24 shrink-0 text-xs text-muted-foreground">
-                      {fmtDate(t.data_evento)}
+                  <li key={t.id} className="flex gap-4 px-4 py-3.5 transition-colors hover:bg-accent-soft/30">
+                    <div className="flex w-24 shrink-0 flex-col">
+                      <span className="inline-flex w-fit items-center rounded-md bg-accent-soft px-2 py-0.5 text-[10px] font-semibold tabular-nums text-accent-foreground">
+                        {fmtDate(t.data_evento)}
+                      </span>
+                    </div>
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary-glow font-display text-xs font-bold text-primary-foreground">
+                      {initial}
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
@@ -568,20 +611,20 @@ function Painel() {
                         <span className="text-xs text-muted-foreground">·</span>
                         <span className="text-xs text-muted-foreground">{proc?.nome}</span>
                         {tipo && (
-                          <span className="inline-flex items-center rounded-full border border-border bg-muted/60 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                          <span className="inline-flex items-center rounded-full border border-border bg-muted/60 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
                             {tipo.nome}
                           </span>
                         )}
                         {statusLabel && (
                           <span
-                            className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px] font-medium ${STATUS_CLASS[statusAtual!] ?? ""}`}
+                            className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${STATUS_CLASS[statusAtual!] ?? ""}`}
                           >
                             {statusLabel}
                           </span>
                         )}
                         {etapa && (
                           <span
-                            className="inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium"
+                            className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium"
                             style={{
                               background: etapa.cor + "1a",
                               color: etapa.cor,
@@ -605,9 +648,13 @@ function Painel() {
         </section>
       </main>
 
-      <footer className="border-t border-border py-6 text-center text-xs text-muted-foreground">
-        Plataforma de acompanhamento de processos administrativos
+      <footer className="border-t border-border/60 py-6 text-center text-[11px] text-muted-foreground">
+        <span className="inline-flex items-center gap-1.5">
+          <FileText className="h-3 w-3" />
+          Plataforma de acompanhamento de processos administrativos
+        </span>
       </footer>
+
 
       <EmpresaProcessosModal
         empresaId={empresaModal}
