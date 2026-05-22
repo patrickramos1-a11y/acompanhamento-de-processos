@@ -326,7 +326,13 @@ function ServicosPage() {
                   </div>
                   <div className="flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="font-semibold text-foreground">{s.nome}</p>
+                      <Link
+                        to="/servicos/$id"
+                        params={{ id: s.id }}
+                        className="font-semibold text-foreground transition-colors hover:text-primary"
+                      >
+                        {s.nome}
+                      </Link>
                       <Badge variant="outline">{empresa?.nome ?? "—"}</Badge>
                       <StatusBadge status={s.status} atrasado={atrasado} />
                     </div>
