@@ -87,6 +87,63 @@ export const getServicosData = createServerFn({ method: "GET" }).handler(async (
   };
 });
 
+export const getServicoById = createServerFn({ method: "GET" })
+  .inputValidator((d: { id: string }) => d)
+  .handler(async ({ data }) => {
+    const { data: srv, error } = await supabaseAdmin
+      .from("servicos").select("*").eq("id", data.id).single();
+    if (error || !srv) throw new Error(error?.message ?? "Serviço não encontrado");
+    const [{ data: tarefas }, { data: empresa }] = await Promise.all([
+      supabaseAdmin.from("servico_tarefas").select("*").eq("servico_id", data.id).order("ordem"),
+      supabaseAdmin.from("empresas").select("id, nome, cnpj").eq("id", srv.empresa_id).maybeSingle(),
+    ]);
+    return {
+      servico: {
+        ...srv,
+        tarefas: (tarefas ?? []).map((t) => ({ ...t, tipo_prazo: t.tipo_prazo as TipoPrazo })),
+      } as Servico,
+      empresa: empresa ?? null,
+    };
+  });
+
+export const getTemplateById = createServerFn({ method: "GET" })
+  .inputValidator((d: { id: string }) => d)
+  .handler(async ({ data }) => {
+    const { data: tpl, error } = await supabaseAdmin
+      .from("templates").select("*").eq("id", data.id).single();
+    if (error || !tpl) throw new Error(error?.message ?? "Template não encontrado");
+    const { data: fases } = await supabaseAdmin
+      .from("template_fases").select("*").eq("template_id", tpl.id).order("ordem");
+    const faseIds = (fases ?? []).map((f) => f.id);
+    const { data: ttarefas } = faseIds.length
+      ? await supabaseAdmin.from("template_tarefas").select("*").in("fase_id", faseIds).order("ordem")
+      : { data: [] as any[] };
+    const template: Template = {
+      id: tpl.id,
+      nome: tpl.nome,
+      prazo_base_dias: tpl.prazo_base_dias,
+      descricao: tpl.descricao,
+      fases: (fases ?? []).map((f) => ({
+        id: f.id,
+        template_id: f.template_id,
+        nome: f.nome,
+        ordem: f.ordem,
+        tarefas: (ttarefas ?? []).filter((tt) => tt.fase_id === f.id).map((tt) => ({
+          id: tt.id,
+          fase_id: tt.fase_id,
+          titulo: tt.titulo,
+          duracao_dias: tt.duracao_dias,
+          tipo_prazo: tt.tipo_prazo as TipoPrazo,
+          impacta_prazo: tt.impacta_prazo,
+          depende_de_template_tarefa_id: tt.depende_de_template_tarefa_id,
+          gerar_apos_conclusao: tt.gerar_apos_conclusao,
+          ordem: tt.ordem,
+        })),
+      })),
+    };
+    return { template };
+  });
+
 // ============================================================
 // Templates
 // ============================================================
