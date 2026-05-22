@@ -49,8 +49,8 @@ export function MultiSelect({
           variant="outline"
           size="sm"
           className={cn(
-            "h-8 justify-between gap-2 px-2.5 text-xs font-normal",
-            selected.length > 0 && "border-primary/50 bg-primary/5",
+            "h-9 justify-between gap-2 rounded-lg border-input/60 bg-background/70 px-3 text-xs font-medium transition-all hover:bg-background",
+            selected.length > 0 && "border-primary/50 bg-primary/8 text-primary hover:bg-primary/10",
             className,
           )}
         >
@@ -58,6 +58,7 @@ export function MultiSelect({
           <ChevronDown className="h-3.5 w-3.5 shrink-0 opacity-60" />
         </Button>
       </PopoverTrigger>
+
       <PopoverContent className="w-56 p-0" align="start">
         <Command>
           <CommandInput placeholder={searchPlaceholder ?? "Buscar..."} className="h-9" />
