@@ -223,7 +223,7 @@ function TemplatesPage() {
       </main>
 
       <Dialog open={!!editId} onOpenChange={(o) => !o && setEditId(null)}>
-        <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
+        <DialogContent className="w-[calc(100vw-1rem)] max-h-[90vh] max-w-3xl overflow-y-auto sm:w-[calc(100vw-2rem)]">
           {editingTemplate && (
             <TemplateEditor
               template={editingTemplate}
