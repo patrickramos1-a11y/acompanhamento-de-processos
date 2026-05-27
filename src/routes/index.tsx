@@ -282,7 +282,7 @@ function Painel() {
                 >
                   <div className="absolute inset-x-0 top-0 h-1 bg-gradient-accent opacity-60 transition-opacity duration-300 group-hover:opacity-100" />
                   <div className="flex items-start gap-3">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-glow font-display text-base font-bold text-primary-foreground shadow-accent-glow ring-2 ring-primary/20">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-glow font-display text-base font-bold text-primary-foreground shadow-sm">
                       {initial}
                     </div>
                     <div className="min-w-0 flex-1">
