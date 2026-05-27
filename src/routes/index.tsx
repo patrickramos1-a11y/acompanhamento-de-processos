@@ -221,9 +221,9 @@ function Painel() {
         {/* Empresas + Tipos */}
         <section className="animate-fade-in-up">
           <SectionTitle icon={<Building2 className="h-4 w-4" />} title="Empresas" />
-          <div className="grid grid-cols-1 gap-4 [grid-auto-flow:dense] sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 [grid-auto-flow:dense] sm:gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {/* Card "Processos por tipo" */}
-            <div className="surface-elevated rounded-2xl p-5 xl:col-start-3 xl:row-span-2 xl:self-start">
+            <div className="surface-elevated rounded-2xl p-4 sm:p-5 xl:col-start-3 xl:row-span-2 xl:self-start">
               <div className="mb-4 flex items-center gap-2">
                 <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent-soft text-accent-foreground">
                   <TrendingUp className="h-3.5 w-3.5" />
@@ -278,31 +278,31 @@ function Painel() {
                 <button
                   key={row.empresa.id}
                   onClick={() => { setEmpresaModal(row.empresa.id); setModalStatusFiltro(""); }}
-                  className="group surface-elevated relative overflow-hidden rounded-2xl p-5 text-left transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-[var(--shadow-lg)]"
+                  className="group surface-elevated relative overflow-hidden rounded-2xl p-4 text-left transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-[var(--shadow-lg)] sm:p-5"
                 >
                   <div className="absolute inset-x-0 top-0 h-1 bg-gradient-accent opacity-60 transition-opacity duration-300 group-hover:opacity-100" />
-                  <div className="flex items-start gap-3">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-glow font-display text-base font-bold text-primary-foreground shadow-sm">
+                  <div className="flex items-start gap-2.5 sm:gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-glow font-display text-sm font-bold text-primary-foreground shadow-sm sm:h-11 sm:w-11 sm:text-base">
                       {initial}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <h3 className="truncate font-display text-base font-semibold leading-tight text-card-foreground">
+                      <h3 className="line-clamp-2 break-words font-display text-[15px] font-semibold leading-tight text-card-foreground sm:text-base">
                         {row.empresa.nome}
                       </h3>
                       {row.grupo && (
-                        <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                        <p className="mt-0.5 line-clamp-2 break-words text-[11px] text-muted-foreground sm:text-xs">
                           {row.grupo.nome}
                         </p>
                       )}
                     </div>
                     {row.parados > 0 && (
-                      <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-warning/40 bg-warning/15 px-2 py-0.5 text-[10px] font-medium text-warning-foreground">
+                      <span className="inline-flex shrink-0 items-center gap-1 self-start rounded-full border border-warning/40 bg-warning/15 px-1.5 py-0.5 text-[10px] font-medium text-warning-foreground sm:px-2">
                         <AlertTriangle className="h-3 w-3" />
                         {row.parados}
                       </span>
                     )}
                   </div>
-                  <div className="mt-4 grid grid-cols-3 gap-2">
+                  <div className="mt-4 grid grid-cols-3 gap-1.5 sm:gap-2">
                     <PillMetric label="Total" value={row.total} />
                     <PillMetric label="Ativos" value={row.ativos} tone="info" />
                     <PillMetric label="Concluídos" value={row.concluidos} tone="success" />
@@ -615,17 +615,17 @@ function Painel() {
         </div>
 
         {/* Últimas tramitações */}
-        <section className="surface-elevated animate-fade-in-up rounded-2xl p-5">
-          <div className="mb-4 flex items-center justify-between">
+          <section className="surface-elevated animate-fade-in-up rounded-2xl p-4 sm:p-5">
+          <div className="mb-4 flex items-start justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-accent text-accent-foreground shadow-accent-glow">
                 <Clock className="h-4 w-4" />
               </div>
-              <div>
-                <h2 className="font-display text-lg font-semibold tracking-tight text-foreground">
+                <div className="min-w-0">
+                  <h2 className="font-display text-base font-semibold tracking-tight text-foreground sm:text-lg">
                   Últimas tramitações
                 </h2>
-                <p className="text-xs text-muted-foreground">
+                  <p className="text-[11px] text-muted-foreground sm:text-xs">
                   {ultimasTramitacoes.length} evento{ultimasTramitacoes.length !== 1 ? "s" : ""} mais recente{ultimasTramitacoes.length !== 1 ? "s" : ""} dos filtros aplicados
                 </p>
               </div>
@@ -660,20 +660,20 @@ function Painel() {
                       <div className="mb-0.5 text-[10px] font-semibold tabular-nums text-accent-foreground sm:hidden">
                         {fmtDate(t.data_evento)}
                       </div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-medium text-card-foreground">
+                      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                        <span className="break-words font-medium text-card-foreground">
                           {empresa?.nome ?? "—"}
                         </span>
                         <span className="text-xs text-muted-foreground">·</span>
-                        <span className="text-xs text-muted-foreground">{proc?.nome}</span>
+                        <span className="break-words text-xs text-muted-foreground">{proc?.nome}</span>
                         {tipo && (
-                          <span className="inline-flex items-center rounded-full border border-border bg-muted/60 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                          <span className="inline-flex max-w-full items-center rounded-full border border-border bg-muted/60 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
                             {tipo.nome}
                           </span>
                         )}
                         {statusLabel && (
                           <span
-                            className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${STATUS_CLASS[statusAtual!] ?? ""}`}
+                            className={`inline-flex max-w-full items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${STATUS_CLASS[statusAtual!] ?? ""}`}
                           >
                             {statusLabel}
                           </span>
@@ -690,7 +690,7 @@ function Painel() {
                           </span>
                         )}
                       </div>
-                      <p className="mt-1 text-sm text-muted-foreground">{t.descricao}</p>
+                      <p className="mt-1 break-words text-sm text-muted-foreground">{t.descricao}</p>
                       <div className="mt-1 text-xs text-muted-foreground">
                         {t.responsavel ?? "—"}
                         {t.setor_orgao ? ` · ${t.setor_orgao}` : ""}
@@ -812,9 +812,9 @@ function PillMetric({
         ? "bg-success/20 text-success border-success/40"
         : "bg-secondary/70 text-foreground border-border";
   return (
-    <div className={`rounded-lg border px-2.5 py-1.5 shadow-sm ${cls}`}>
-      <div className="text-[10px] font-semibold uppercase tracking-wider">{label}</div>
-      <div className="mt-0.5 font-display text-lg font-bold tabular-nums leading-none">{value}</div>
+    <div className={`rounded-lg border px-2 py-1.5 shadow-sm sm:px-2.5 ${cls}`}>
+      <div className="text-[9px] font-semibold uppercase leading-tight tracking-[0.08em] sm:text-[10px]">{label}</div>
+      <div className="mt-1 font-display text-base font-bold tabular-nums leading-none sm:text-lg">{value}</div>
     </div>
   );
 }
@@ -931,7 +931,7 @@ function EmpresaProcessosModal({
         </DialogHeader>
 
         <div className="border-b border-border bg-muted/30 px-4 py-3 sm:px-6">
-          <div className="flex flex-wrap gap-2">
+          <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
             {STATUS_TABS.map((tab) => {
               const active = statusFiltro === tab.key;
               const count = counts[tab.key] ?? 0;
@@ -939,7 +939,7 @@ function EmpresaProcessosModal({
                 <button
                   key={tab.key}
                   onClick={() => setStatusFiltro(tab.key)}
-                  className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                  className={`inline-flex shrink-0 items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
                     active
                       ? "border-primary bg-primary text-primary-foreground"
                       : "border-border bg-background text-muted-foreground hover:text-foreground"
@@ -960,7 +960,78 @@ function EmpresaProcessosModal({
         </div>
 
         <div className="max-h-[60vh] overflow-auto">
-          <table className="w-full min-w-[640px] text-sm">
+          <div className="md:hidden divide-y divide-border/60">
+            {procsFiltrados.length === 0 && (
+              <div className="px-4 py-12 text-center text-sm text-muted-foreground">
+                Nenhum processo nesta categoria.
+              </div>
+            )}
+            {procsFiltrados.map((p) => {
+              const tipo = tipos.get(p.tipo_processo_id);
+              const etapaAtual = p.etapa_atual_id ? etapas.get(p.etapa_atual_id) : null;
+              const etapasDoTipo = etapasByTipo.get(p.tipo_processo_id) ?? [];
+              const idxAtual = etapaAtual
+                ? etapasDoTipo.findIndex((e: any) => e.id === etapaAtual.id)
+                : -1;
+              const total = etapasDoTipo.length;
+              const progresso =
+                p.status === "concluido"
+                  ? 100
+                  : total > 0 && idxAtual >= 0
+                    ? ((idxAtual + 1) / total) * 100
+                    : 0;
+              const parado = isParado(p);
+              const statusLabel = p.status_detalhado ?? STATUS_TAB_LABEL[p.status] ?? p.status;
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => onAbrirProcesso(p.id)}
+                  className="block w-full space-y-2 px-4 py-3 text-left transition-colors hover:bg-muted/40"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5">
+                        <p className="break-words font-medium text-card-foreground">{tipo?.nome ?? "—"}</p>
+                        {parado && <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-warning" />}
+                      </div>
+                      <p className="mt-0.5 break-words text-xs text-muted-foreground">{p.nome}</p>
+                    </div>
+                    <span className={`inline-flex max-w-[11rem] items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${STATUS_CLASS[p.status]}`}>
+                      <span className="truncate">{statusLabel}</span>
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+                    {p.numero_protocolo && <span className="font-mono">#{p.numero_protocolo}</span>}
+                    <span>{p.data_protocolo ? format(parseISO(p.data_protocolo), "dd/MM/yyyy", { locale: ptBR }) : "—"}</span>
+                    {p.responsavel && <span>{p.responsavel}</span>}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
+                      <div
+                        className="h-full rounded-full transition-all"
+                        style={{
+                          width: `${progresso}%`,
+                          background:
+                            p.status === "concluido"
+                              ? "var(--success)"
+                              : etapaAtual?.cor ?? "var(--primary)",
+                        }}
+                      />
+                    </div>
+                    <span className="text-[10px] tabular-nums text-muted-foreground">
+                      {idxAtual >= 0 && total > 0
+                        ? `${idxAtual + 1}/${total}`
+                        : p.status === "concluido"
+                          ? `${total}/${total}`
+                          : "—"}
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          <table className="hidden w-full min-w-[640px] text-sm md:table">
             <thead className="sticky top-0 bg-sidebar text-sidebar-foreground">
               <tr className="text-left">
                 <Th>Tipo</Th>
@@ -1115,12 +1186,14 @@ function ProcessoTramitacoesModal({
             <ClipboardList className="h-4 w-4" />
             Acompanhamentos do processo
           </DialogTitle>
-          <DialogDescription className="text-sidebar-foreground/70">
+          <DialogDescription className="space-y-2 text-sidebar-foreground/70">
+            <span className="block break-words">
             {empresa?.nome ?? "—"} · {tipo?.nome ?? "—"} · {processo?.nome ?? ""}
             {processo?.numero_protocolo ? ` · ${processo.numero_protocolo}` : ""}
+            </span>
             {processo && (
               <span
-                className={`ml-2 inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${STATUS_CLASS[processo.status]}`}
+                className={`inline-flex w-fit items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${STATUS_CLASS[processo.status]}`}
               >
                 {statusLabel}
               </span>
