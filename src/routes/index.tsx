@@ -278,11 +278,11 @@ function Painel() {
                 <button
                   key={row.empresa.id}
                   onClick={() => { setEmpresaModal(row.empresa.id); setModalStatusFiltro(""); }}
-                  className="group surface-card relative overflow-hidden rounded-2xl p-5 text-left transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-[var(--shadow-md)]"
+                  className="group surface-elevated relative overflow-hidden rounded-2xl p-5 text-left transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-[var(--shadow-lg)]"
                 >
-                  <div className="absolute inset-x-0 top-0 h-0.5 origin-left scale-x-0 bg-gradient-accent transition-transform duration-300 group-hover:scale-x-100" />
+                  <div className="absolute inset-x-0 top-0 h-1 bg-gradient-accent opacity-60 transition-opacity duration-300 group-hover:opacity-100" />
                   <div className="flex items-start gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-glow font-display text-base font-bold text-primary-foreground shadow-sm">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-glow font-display text-base font-bold text-primary-foreground shadow-accent-glow ring-2 ring-primary/20">
                       {initial}
                     </div>
                     <div className="min-w-0 flex-1">
@@ -310,9 +310,9 @@ function Painel() {
                   <div className="mt-3.5">
                     <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-muted-foreground">
                       <span>Conclusão</span>
-                      <span className="font-medium text-foreground">{Math.round(pctConcluido)}%</span>
+                      <span className="font-display text-sm font-bold text-primary">{Math.round(pctConcluido)}%</span>
                     </div>
-                    <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
+                    <div className="mt-1 h-2 overflow-hidden rounded-full bg-secondary">
                       <div
                         className="h-full rounded-full bg-gradient-to-r from-success to-primary transition-all duration-500"
                         style={{ width: `${pctConcluido}%` }}
@@ -807,14 +807,14 @@ function PillMetric({
 }) {
   const cls =
     tone === "info"
-      ? "bg-info/10 text-info"
+      ? "bg-info/20 text-info border-info/40"
       : tone === "success"
-        ? "bg-success/10 text-success"
-        : "bg-muted/70 text-foreground";
+        ? "bg-success/20 text-success border-success/40"
+        : "bg-secondary/70 text-foreground border-border";
   return (
-    <div className={`rounded-lg px-2.5 py-1.5 ${cls}`}>
-      <div className="text-[9px] font-semibold uppercase tracking-wider opacity-80">{label}</div>
-      <div className="mt-0.5 font-display text-base font-bold tabular-nums leading-none">{value}</div>
+    <div className={`rounded-lg border px-2.5 py-1.5 shadow-sm ${cls}`}>
+      <div className="text-[10px] font-semibold uppercase tracking-wider">{label}</div>
+      <div className="mt-0.5 font-display text-lg font-bold tabular-nums leading-none">{value}</div>
     </div>
   );
 }
