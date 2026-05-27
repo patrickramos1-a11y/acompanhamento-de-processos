@@ -60,7 +60,7 @@ function TemplateDetail() {
           </Link>
         </div>
 
-        <div className="surface-elevated grid gap-4 rounded-2xl p-4 grid-cols-3 sm:p-5">
+        <div className="surface-elevated grid grid-cols-1 gap-3 rounded-2xl p-4 sm:grid-cols-3 sm:gap-4 sm:p-5">
           <Stat label="Prazo base" value={`${template.prazo_base_dias}d`} />
           <Stat label="Fases" value={String(template.fases.length)} />
           <Stat label="Tarefas" value={String(total)} />
@@ -68,8 +68,8 @@ function TemplateDetail() {
 
         <div className="space-y-4">
           {template.fases.map((f) => (
-            <div key={f.id} className="surface-card rounded-xl p-5">
-              <div className="mb-3 flex items-center gap-2">
+            <div key={f.id} className="surface-card rounded-xl p-4 sm:p-5">
+              <div className="mb-3 flex flex-wrap items-center gap-2">
                 <Badge variant="outline">Fase {f.ordem}</Badge>
                 <h3 className="font-display text-base font-semibold text-foreground">{f.nome}</h3>
                 <span className="text-xs text-muted-foreground">· {f.tarefas.length} tarefa(s)</span>
@@ -78,16 +78,16 @@ function TemplateDetail() {
                 {f.tarefas.map((t) => (
                   <div
                     key={t.id}
-                    className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2 text-sm"
+                    className="flex flex-col gap-2 rounded-lg bg-muted/40 px-3 py-2 text-sm sm:flex-row sm:items-center sm:justify-between"
                   >
-                    <div className="flex-1">
-                      <span className="font-medium">{t.titulo}</span>
-                      <span className="ml-2 text-xs text-muted-foreground">
+                    <div className="min-w-0 flex-1">
+                      <span className="break-words font-medium">{t.titulo}</span>
+                      <span className="ml-0 mt-1 block text-xs text-muted-foreground sm:ml-2 sm:mt-0 sm:inline">
                         {t.duracao_dias}d •{" "}
                         {t.tipo_prazo === "RELATIVO_AO_INICIO" ? "relativo ao início" : "após dependência"}
                       </span>
                     </div>
-                    <div className="flex gap-1">
+                    <div className="flex flex-wrap gap-1">
                       {t.impacta_prazo && (
                         <Badge variant="outline" className="text-[10px]">impacta prazo</Badge>
                       )}
@@ -120,7 +120,7 @@ function Stat({ label, value }: { label: string; value: string }) {
       <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
         {label}
       </div>
-      <div className="mt-1 font-display text-3xl font-bold tabular-nums">{value}</div>
+      <div className="mt-1 font-display text-2xl font-bold tabular-nums sm:text-3xl">{value}</div>
     </div>
   );
 }

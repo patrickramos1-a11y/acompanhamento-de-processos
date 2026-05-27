@@ -79,7 +79,7 @@ function ServicoDetail() {
           Voltar para serviços
         </Link>
 
-        <div className="surface-elevated grid gap-4 rounded-2xl p-4 grid-cols-2 sm:p-5 md:grid-cols-4">
+        <div className="surface-elevated grid grid-cols-1 gap-3 rounded-2xl p-4 sm:grid-cols-2 sm:gap-4 sm:p-5 md:grid-cols-4">
           <InfoCard
             icon={<Building2 className="h-4 w-4" />}
             label="Empresa"
@@ -106,7 +106,7 @@ function ServicoDetail() {
           />
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {servico.status === "concluido" && (
             <Badge className="border border-success/30 bg-success/15 text-success">Concluído</Badge>
           )}
@@ -156,7 +156,7 @@ function InfoCard({
         <span className="text-accent-foreground">{icon}</span>
         {label}
       </div>
-      <p className="mt-1.5 font-display text-lg font-semibold text-foreground">{value}</p>
+      <p className="mt-1.5 break-words font-display text-base font-semibold text-foreground sm:text-lg">{value}</p>
       {sub && <p className={`mt-0.5 text-xs ${subCls}`}>{sub}</p>}
     </div>
   );
