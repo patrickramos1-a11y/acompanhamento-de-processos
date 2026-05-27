@@ -807,14 +807,14 @@ function PillMetric({
 }) {
   const cls =
     tone === "info"
-      ? "bg-info/10 text-info"
+      ? "bg-info/20 text-info border-info/40"
       : tone === "success"
-        ? "bg-success/10 text-success"
-        : "bg-muted/70 text-foreground";
+        ? "bg-success/20 text-success border-success/40"
+        : "bg-secondary/70 text-foreground border-border";
   return (
-    <div className={`rounded-lg px-2.5 py-1.5 ${cls}`}>
-      <div className="text-[9px] font-semibold uppercase tracking-wider opacity-80">{label}</div>
-      <div className="mt-0.5 font-display text-base font-bold tabular-nums leading-none">{value}</div>
+    <div className={`rounded-lg border px-2.5 py-1.5 shadow-sm ${cls}`}>
+      <div className="text-[10px] font-semibold uppercase tracking-wider">{label}</div>
+      <div className="mt-0.5 font-display text-lg font-bold tabular-nums leading-none">{value}</div>
     </div>
   );
 }
