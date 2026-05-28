@@ -22,7 +22,7 @@ import {
   FileText,
   Search,
   Clock,
-  TrendingUp,
+  
   Settings,
   ClipboardList,
 } from "lucide-react";
