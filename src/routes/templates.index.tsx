@@ -234,7 +234,7 @@ function TemplatesPage() {
             <TemplateEditor
               template={editingTemplate}
               onClose={() => setEditId(null)}
-              onChanged={() => router.invalidate()}
+              onChanged={refresh}
             />
           )}
         </DialogContent>
