@@ -161,14 +161,8 @@ function Painel() {
       .sort((a, b) => b.total - a.total);
   }, [empresas, processos, grupoMap, ultimaPorProcesso]);
 
-  const porTipo = useMemo(() => {
-    return tipos
-      .map((t) => ({
-        tipo: t,
-        total: processos.filter((p) => p.tipo_processo_id === t.id).length,
-      }))
-      .sort((a, b) => b.total - a.total);
-  }, [tipos, processos]);
+
+
 
   const responsaveis = useMemo(() => {
     const s = new Set<string>();
