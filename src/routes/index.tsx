@@ -129,15 +129,24 @@ function Painel() {
     return empresas
       .map((e) => {
         const procs = processos.filter((p) => p.empresa_id === e.id);
+        const concluidos = procs.filter((p) => p.status === "concluido").length;
+        // Agrupa por status_detalhado (fallback para STATUS_LABEL[status])
+        const detalheMap = new Map<string, { label: string; value: number; status: string }>();
+        for (const p of procs) {
+          const label = (p.status_detalhado?.trim() || STATUS_LABEL[p.status] || p.status).toString();
+          const key = `${p.status}::${label}`;
+          const cur = detalheMap.get(key);
+          if (cur) cur.value += 1;
+          else detalheMap.set(key, { label, value: 1, status: p.status });
+        }
+        const detalhes = Array.from(detalheMap.values()).sort((a, b) => b.value - a.value);
         return {
           empresa: e,
           grupo: e.grupo_id ? grupoMap.get(e.grupo_id) : null,
           total: procs.length,
-          ativos: procs.filter((p) => p.status === "ativo").length,
-          concluidos: procs.filter((p) => p.status === "concluido").length,
-          suspensos: procs.filter((p) => p.status === "suspenso").length,
-          cancelados: procs.filter((p) => p.status === "cancelado").length,
+          concluidos,
           parados: procs.filter(isParado).length,
+          detalhes,
         };
       })
       .filter((x) => x.total > 0)
