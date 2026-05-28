@@ -313,12 +313,16 @@ function Painel() {
                       </span>
                     )}
                   </div>
-                  <div className="mt-4 grid grid-cols-3 gap-1.5 sm:grid-cols-5 sm:gap-2">
+                  <div className="mt-4 flex max-h-44 flex-wrap gap-1.5 overflow-y-auto pr-1 sm:gap-2">
                     <PillMetric label="Total" value={row.total} tone="total" />
-                    <PillMetric label="Ativos" value={row.ativos} tone="info" />
-                    <PillMetric label="Concluídos" value={row.concluidos} tone="success" />
-                    <PillMetric label="Suspensos" value={row.suspensos} tone="warning" />
-                    <PillMetric label="Cancelados" value={row.cancelados} tone="destructive" />
+                    {row.detalhes.map((d) => (
+                      <PillMetric
+                        key={d.label}
+                        label={d.label}
+                        value={d.value}
+                        tone={statusToTone(d.status)}
+                      />
+                    ))}
                   </div>
                   <div className="mt-3.5">
                     <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-muted-foreground">
