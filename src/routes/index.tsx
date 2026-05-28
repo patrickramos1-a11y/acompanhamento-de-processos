@@ -132,10 +132,57 @@ function Painel() {
     return { total, ativos, concluidos, parados };
   }, [processos, ultimaPorProcesso]);
 
+  const responsaveis = useMemo(() => {
+    const s = new Set<string>();
+    for (const p of processos) if (p.responsavel) s.add(p.responsavel);
+    return Array.from(s).sort((a, b) => a.localeCompare(b));
+  }, [processos]);
+
+  const anos = useMemo(() => {
+    const s = new Set<string>();
+    for (const p of processos) if (p.data_protocolo) s.add(p.data_protocolo.slice(0, 4));
+    return Array.from(s).sort((a, b) => b.localeCompare(a));
+  }, [processos]);
+
+  const statusDetalhadoOptions = useMemo(() => {
+    const s = new Set<string>();
+    for (const p of processos) {
+      const v = p.status_detalhado?.trim();
+      if (v) s.add(v);
+    }
+    return Array.from(s).sort((a, b) => a.localeCompare(b));
+  }, [processos]);
+
+  const processosFiltrados = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return processos.filter((p) => {
+      if (empresaFiltro.length && !empresaFiltro.includes(p.empresa_id)) return false;
+      if (statusFiltro.length) {
+        const sd = p.status_detalhado?.trim() ?? "";
+        if (!statusFiltro.includes(sd)) return false;
+      }
+      if (tipoFiltro.length && !tipoFiltro.includes(p.tipo_processo_id)) return false;
+      if (responsavelFiltro.length && (!p.responsavel || !responsavelFiltro.includes(p.responsavel))) return false;
+      if (anoFiltro.length) {
+        if (!p.data_protocolo || !anoFiltro.includes(p.data_protocolo.slice(0, 4))) return false;
+      }
+      if (mesFiltro.length) {
+        if (!p.data_protocolo || !mesFiltro.includes(p.data_protocolo.slice(5, 7))) return false;
+      }
+
+      if (q) {
+        const empresa = empresaMap.get(p.empresa_id)?.nome ?? "";
+        const hay = `${p.nome} ${p.numero_protocolo ?? ""} ${empresa} ${p.responsavel ?? ""}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [processos, search, empresaFiltro, statusFiltro, tipoFiltro, responsavelFiltro, mesFiltro, anoFiltro, empresaMap]);
+
   const porEmpresa = useMemo(() => {
     return empresas
       .map((e) => {
-        const procs = processos.filter((p) => p.empresa_id === e.id);
+        const procs = processosFiltrados.filter((p) => p.empresa_id === e.id);
         const concluidos = procs.filter((p) => p.status === "concluido").length;
         // Agrupa por status_detalhado (apenas os que vieram da planilha)
         const detalheMap = new Map<string, { label: string; value: number; status: string }>();
@@ -159,50 +206,13 @@ function Painel() {
       })
       .filter((x) => x.total > 0)
       .sort((a, b) => b.total - a.total);
-  }, [empresas, processos, grupoMap, ultimaPorProcesso]);
-
-
-
-
-  const responsaveis = useMemo(() => {
-    const s = new Set<string>();
-    for (const p of processos) if (p.responsavel) s.add(p.responsavel);
-    return Array.from(s).sort((a, b) => a.localeCompare(b));
-  }, [processos]);
-
-  const anos = useMemo(() => {
-    const s = new Set<string>();
-    for (const p of processos) if (p.data_protocolo) s.add(p.data_protocolo.slice(0, 4));
-    return Array.from(s).sort((a, b) => b.localeCompare(a));
-  }, [processos]);
-
-  const processosFiltrados = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return processos.filter((p) => {
-      if (empresaFiltro.length && !empresaFiltro.includes(p.empresa_id)) return false;
-      if (statusFiltro.length && !statusFiltro.includes(p.status)) return false;
-      if (tipoFiltro.length && !tipoFiltro.includes(p.tipo_processo_id)) return false;
-      if (responsavelFiltro.length && (!p.responsavel || !responsavelFiltro.includes(p.responsavel))) return false;
-      if (anoFiltro.length) {
-        if (!p.data_protocolo || !anoFiltro.includes(p.data_protocolo.slice(0, 4))) return false;
-      }
-      if (mesFiltro.length) {
-        if (!p.data_protocolo || !mesFiltro.includes(p.data_protocolo.slice(5, 7))) return false;
-      }
-
-      if (q) {
-        const empresa = empresaMap.get(p.empresa_id)?.nome ?? "";
-        const hay = `${p.nome} ${p.numero_protocolo ?? ""} ${empresa} ${p.responsavel ?? ""}`.toLowerCase();
-        if (!hay.includes(q)) return false;
-      }
-      return true;
-    });
-  }, [processos, search, empresaFiltro, statusFiltro, tipoFiltro, responsavelFiltro, mesFiltro, anoFiltro, empresaMap]);
+  }, [empresas, processosFiltrados, grupoMap, ultimaPorProcesso]);
 
   const ultimasTramitacoes = useMemo(() => {
     const ids = new Set(processosFiltrados.map((p) => p.id));
     return tramitacoes.filter((t) => ids.has(t.processo_id)).slice(0, 12);
   }, [tramitacoes, processosFiltrados]);
+
 
 
   return (
@@ -231,12 +241,98 @@ function Painel() {
           />
         </section>
 
-        {/* Empresas + Tipos */}
+        {/* Filtros globais (cards + tabela) */}
         <section className="animate-fade-in-up">
-          <SectionTitle icon={<Building2 className="h-4 w-4" />} title="Empresas" />
+          <div className="glass grid gap-2 rounded-xl p-2 shadow-sm sm:flex sm:flex-wrap sm:items-center sm:gap-1.5">
+            <div className="relative w-full sm:min-w-[240px] sm:flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar por nome do cliente, protocolo, empresa..."
+                className="h-9 w-full rounded-lg border border-input/60 bg-background/70 pl-9 pr-3 text-xs outline-none transition-all focus:border-primary focus:bg-background focus:ring-2 focus:ring-primary/15"
+              />
+            </div>
+            <MultiSelect
+              label="Todas as empresas"
+              searchPlaceholder="Buscar empresa..."
+              options={empresas.map((e) => ({ value: e.id, label: e.nome }))}
+              selected={empresaFiltro}
+              onChange={setEmpresaFiltro}
+            />
+            <MultiSelect
+              label="Todos os tipos"
+              searchPlaceholder="Buscar tipo..."
+              options={tipos.map((t) => ({ value: t.id, label: t.nome }))}
+              selected={tipoFiltro}
+              onChange={setTipoFiltro}
+            />
+            <MultiSelect
+              label="Todos os status"
+              searchPlaceholder="Buscar status..."
+              options={statusDetalhadoOptions.map((s) => ({ value: s, label: s }))}
+              selected={statusFiltro}
+              onChange={setStatusFiltro}
+            />
+            <MultiSelect
+              label="Todos os responsáveis"
+              searchPlaceholder="Buscar responsável..."
+              options={responsaveis.map((r) => ({ value: r, label: r }))}
+              selected={responsavelFiltro}
+              onChange={setResponsavelFiltro}
+            />
+            <MultiSelect
+              label="Todos os meses"
+              searchPlaceholder="Buscar mês..."
+              options={[
+                ["01", "Janeiro"], ["02", "Fevereiro"], ["03", "Março"], ["04", "Abril"],
+                ["05", "Maio"], ["06", "Junho"], ["07", "Julho"], ["08", "Agosto"],
+                ["09", "Setembro"], ["10", "Outubro"], ["11", "Novembro"], ["12", "Dezembro"],
+              ].map(([v, l]) => ({ value: v, label: l }))}
+              selected={mesFiltro}
+              onChange={setMesFiltro}
+            />
+            <MultiSelect
+              label="Todos os anos"
+              searchPlaceholder="Buscar ano..."
+              options={anos.map((a) => ({ value: a, label: a }))}
+              selected={anoFiltro}
+              onChange={setAnoFiltro}
+            />
+            {(search ||
+              empresaFiltro.length ||
+              tipoFiltro.length ||
+              statusFiltro.length ||
+              responsavelFiltro.length ||
+              mesFiltro.join(",") !== mesAtual ||
+              anoFiltro.join(",") !== anoAtual) && (
+              <button
+                onClick={() => {
+                  setSearch("");
+                  setEmpresaFiltro([]);
+                  setTipoFiltro([]);
+                  setStatusFiltro([]);
+                  setResponsavelFiltro([]);
+                  setMesFiltro([mesAtual]);
+                  setAnoFiltro([anoAtual]);
+                }}
+                className="h-9 rounded-lg px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                Limpar filtros
+              </button>
+            )}
+          </div>
+        </section>
+
+        {/* Empresas */}
+        <section className="animate-fade-in-up">
+          <SectionTitle icon={<Building2 className="h-4 w-4" />} title={`Empresas (${porEmpresa.length})`} />
           <div className="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2 xl:grid-cols-3">
-
-
+            {porEmpresa.length === 0 && (
+              <div className="surface-card col-span-full rounded-2xl px-6 py-10 text-center text-sm text-muted-foreground">
+                Nenhuma empresa encontrada com os filtros aplicados.
+              </div>
+            )}
             {porEmpresa.map((row) => {
               const pctConcluido = row.total ? (row.concluidos / row.total) * 100 : 0;
               const initial = row.empresa.nome.trim().charAt(0).toUpperCase();
@@ -299,93 +395,14 @@ function Painel() {
 
         {/* Processos table */}
         <section className="animate-fade-in-up">
-          <div className="flex flex-wrap items-end justify-between gap-4">
+          <div className="mb-4 flex flex-wrap items-end justify-between gap-4">
             <SectionTitle
               icon={<FileText className="h-4 w-4" />}
               title={`Processos (${processosFiltrados.length})`}
             />
           </div>
 
-          {/* Filters */}
-          <div className="glass mb-4 grid gap-2 rounded-xl p-2 shadow-sm sm:flex sm:flex-wrap sm:items-center sm:gap-1.5">
-            <div className="relative w-full sm:min-w-[240px] sm:flex-1">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Buscar por nome, protocolo, empresa..."
-                className="h-9 w-full rounded-lg border border-input/60 bg-background/70 pl-9 pr-3 text-xs outline-none transition-all focus:border-primary focus:bg-background focus:ring-2 focus:ring-primary/15"
-              />
-            </div>
-            <MultiSelect
-              label="Todas as empresas"
-              searchPlaceholder="Buscar empresa..."
-              options={empresas.map((e) => ({ value: e.id, label: e.nome }))}
-              selected={empresaFiltro}
-              onChange={setEmpresaFiltro}
-            />
-            <MultiSelect
-              label="Todos os tipos"
-              searchPlaceholder="Buscar tipo..."
-              options={tipos.map((t) => ({ value: t.id, label: t.nome }))}
-              selected={tipoFiltro}
-              onChange={setTipoFiltro}
-            />
-            <MultiSelect
-              label="Todos os status"
-              searchPlaceholder="Buscar status..."
-              options={Object.entries(STATUS_LABEL).map(([v, l]) => ({ value: v, label: l }))}
-              selected={statusFiltro}
-              onChange={setStatusFiltro}
-            />
-            <MultiSelect
-              label="Todos os responsáveis"
-              searchPlaceholder="Buscar responsável..."
-              options={responsaveis.map((r) => ({ value: r, label: r }))}
-              selected={responsavelFiltro}
-              onChange={setResponsavelFiltro}
-            />
-            <MultiSelect
-              label="Todos os meses"
-              searchPlaceholder="Buscar mês..."
-              options={[
-                ["01", "Janeiro"], ["02", "Fevereiro"], ["03", "Março"], ["04", "Abril"],
-                ["05", "Maio"], ["06", "Junho"], ["07", "Julho"], ["08", "Agosto"],
-                ["09", "Setembro"], ["10", "Outubro"], ["11", "Novembro"], ["12", "Dezembro"],
-              ].map(([v, l]) => ({ value: v, label: l }))}
-              selected={mesFiltro}
-              onChange={setMesFiltro}
-            />
-            <MultiSelect
-              label="Todos os anos"
-              searchPlaceholder="Buscar ano..."
-              options={anos.map((a) => ({ value: a, label: a }))}
-              selected={anoFiltro}
-              onChange={setAnoFiltro}
-            />
-            {(search ||
-              empresaFiltro.length ||
-              tipoFiltro.length ||
-              statusFiltro.length ||
-              responsavelFiltro.length ||
-              mesFiltro.join(",") !== mesAtual ||
-              anoFiltro.join(",") !== anoAtual) && (
-              <button
-                onClick={() => {
-                  setSearch("");
-                  setEmpresaFiltro([]);
-                  setTipoFiltro([]);
-                  setStatusFiltro([]);
-                  setResponsavelFiltro([]);
-                  setMesFiltro([mesAtual]);
-                  setAnoFiltro([anoAtual]);
-                }}
-                className="h-9 rounded-lg px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              >
-                Limpar filtros
-              </button>
-            )}
-          </div>
+
 
           <div className="surface-elevated overflow-hidden rounded-2xl">
             {/* Mobile: cards */}
