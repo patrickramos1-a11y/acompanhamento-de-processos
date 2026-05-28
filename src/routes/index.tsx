@@ -61,6 +61,13 @@ const STATUS_CLASS: Record<string, string> = {
   suspenso: "bg-warning/15 text-warning-foreground border-warning/40",
 };
 
+function statusToTone(status: string): "info" | "success" | "warning" | "destructive" {
+  if (status === "concluido") return "success";
+  if (status === "suspenso") return "warning";
+  if (status === "cancelado") return "destructive";
+  return "info";
+}
+
 function fmtDate(d: string | null | undefined) {
   if (!d) return "—";
   try {
