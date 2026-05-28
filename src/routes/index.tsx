@@ -132,10 +132,57 @@ function Painel() {
     return { total, ativos, concluidos, parados };
   }, [processos, ultimaPorProcesso]);
 
+  const responsaveis = useMemo(() => {
+    const s = new Set<string>();
+    for (const p of processos) if (p.responsavel) s.add(p.responsavel);
+    return Array.from(s).sort((a, b) => a.localeCompare(b));
+  }, [processos]);
+
+  const anos = useMemo(() => {
+    const s = new Set<string>();
+    for (const p of processos) if (p.data_protocolo) s.add(p.data_protocolo.slice(0, 4));
+    return Array.from(s).sort((a, b) => b.localeCompare(a));
+  }, [processos]);
+
+  const statusDetalhadoOptions = useMemo(() => {
+    const s = new Set<string>();
+    for (const p of processos) {
+      const v = p.status_detalhado?.trim();
+      if (v) s.add(v);
+    }
+    return Array.from(s).sort((a, b) => a.localeCompare(b));
+  }, [processos]);
+
+  const processosFiltrados = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return processos.filter((p) => {
+      if (empresaFiltro.length && !empresaFiltro.includes(p.empresa_id)) return false;
+      if (statusFiltro.length) {
+        const sd = p.status_detalhado?.trim() ?? "";
+        if (!statusFiltro.includes(sd)) return false;
+      }
+      if (tipoFiltro.length && !tipoFiltro.includes(p.tipo_processo_id)) return false;
+      if (responsavelFiltro.length && (!p.responsavel || !responsavelFiltro.includes(p.responsavel))) return false;
+      if (anoFiltro.length) {
+        if (!p.data_protocolo || !anoFiltro.includes(p.data_protocolo.slice(0, 4))) return false;
+      }
+      if (mesFiltro.length) {
+        if (!p.data_protocolo || !mesFiltro.includes(p.data_protocolo.slice(5, 7))) return false;
+      }
+
+      if (q) {
+        const empresa = empresaMap.get(p.empresa_id)?.nome ?? "";
+        const hay = `${p.nome} ${p.numero_protocolo ?? ""} ${empresa} ${p.responsavel ?? ""}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [processos, search, empresaFiltro, statusFiltro, tipoFiltro, responsavelFiltro, mesFiltro, anoFiltro, empresaMap]);
+
   const porEmpresa = useMemo(() => {
     return empresas
       .map((e) => {
-        const procs = processos.filter((p) => p.empresa_id === e.id);
+        const procs = processosFiltrados.filter((p) => p.empresa_id === e.id);
         const concluidos = procs.filter((p) => p.status === "concluido").length;
         // Agrupa por status_detalhado (apenas os que vieram da planilha)
         const detalheMap = new Map<string, { label: string; value: number; status: string }>();
@@ -159,50 +206,13 @@ function Painel() {
       })
       .filter((x) => x.total > 0)
       .sort((a, b) => b.total - a.total);
-  }, [empresas, processos, grupoMap, ultimaPorProcesso]);
-
-
-
-
-  const responsaveis = useMemo(() => {
-    const s = new Set<string>();
-    for (const p of processos) if (p.responsavel) s.add(p.responsavel);
-    return Array.from(s).sort((a, b) => a.localeCompare(b));
-  }, [processos]);
-
-  const anos = useMemo(() => {
-    const s = new Set<string>();
-    for (const p of processos) if (p.data_protocolo) s.add(p.data_protocolo.slice(0, 4));
-    return Array.from(s).sort((a, b) => b.localeCompare(a));
-  }, [processos]);
-
-  const processosFiltrados = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return processos.filter((p) => {
-      if (empresaFiltro.length && !empresaFiltro.includes(p.empresa_id)) return false;
-      if (statusFiltro.length && !statusFiltro.includes(p.status)) return false;
-      if (tipoFiltro.length && !tipoFiltro.includes(p.tipo_processo_id)) return false;
-      if (responsavelFiltro.length && (!p.responsavel || !responsavelFiltro.includes(p.responsavel))) return false;
-      if (anoFiltro.length) {
-        if (!p.data_protocolo || !anoFiltro.includes(p.data_protocolo.slice(0, 4))) return false;
-      }
-      if (mesFiltro.length) {
-        if (!p.data_protocolo || !mesFiltro.includes(p.data_protocolo.slice(5, 7))) return false;
-      }
-
-      if (q) {
-        const empresa = empresaMap.get(p.empresa_id)?.nome ?? "";
-        const hay = `${p.nome} ${p.numero_protocolo ?? ""} ${empresa} ${p.responsavel ?? ""}`.toLowerCase();
-        if (!hay.includes(q)) return false;
-      }
-      return true;
-    });
-  }, [processos, search, empresaFiltro, statusFiltro, tipoFiltro, responsavelFiltro, mesFiltro, anoFiltro, empresaMap]);
+  }, [empresas, processosFiltrados, grupoMap, ultimaPorProcesso]);
 
   const ultimasTramitacoes = useMemo(() => {
     const ids = new Set(processosFiltrados.map((p) => p.id));
     return tramitacoes.filter((t) => ids.has(t.processo_id)).slice(0, 12);
   }, [tramitacoes, processosFiltrados]);
+
 
 
   return (
