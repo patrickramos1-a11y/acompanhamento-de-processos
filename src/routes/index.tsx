@@ -22,7 +22,7 @@ import {
   FileText,
   Search,
   Clock,
-  TrendingUp,
+  
   Settings,
   ClipboardList,
 } from "lucide-react";
@@ -161,14 +161,8 @@ function Painel() {
       .sort((a, b) => b.total - a.total);
   }, [empresas, processos, grupoMap, ultimaPorProcesso]);
 
-  const porTipo = useMemo(() => {
-    return tipos
-      .map((t) => ({
-        tipo: t,
-        total: processos.filter((p) => p.tipo_processo_id === t.id).length,
-      }))
-      .sort((a, b) => b.total - a.total);
-  }, [tipos, processos]);
+
+
 
   const responsaveis = useMemo(() => {
     const s = new Set<string>();
@@ -240,55 +234,8 @@ function Painel() {
         {/* Empresas + Tipos */}
         <section className="animate-fade-in-up">
           <SectionTitle icon={<Building2 className="h-4 w-4" />} title="Empresas" />
-          <div className="grid grid-cols-1 gap-3 [grid-auto-flow:dense] sm:gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {/* Card "Processos por tipo" */}
-            <div className="surface-elevated rounded-2xl p-4 sm:p-5 xl:col-start-3 xl:row-span-2 xl:self-start">
-              <div className="mb-4 flex items-center gap-2">
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent-soft text-accent-foreground">
-                  <TrendingUp className="h-3.5 w-3.5" />
-                </div>
-                <span className="text-xs font-semibold uppercase tracking-wider text-foreground">
-                  Processos por tipo
-                </span>
-              </div>
-              <div className="max-h-80 space-y-3 overflow-y-auto pr-1">
-                {porTipo.map((row) => {
-                  const max = Math.max(...porTipo.map((r) => r.total));
-                  const pct = max ? (row.total / max) * 100 : 0;
-                  const active = tipoFiltro.includes(row.tipo.id);
-                  return (
-                    <button
-                      key={row.tipo.id}
-                      onClick={() =>
-                        setTipoFiltro((prev) =>
-                          prev.includes(row.tipo.id)
-                            ? prev.filter((x) => x !== row.tipo.id)
-                            : [...prev, row.tipo.id],
-                        )
-                      }
-                      className={`group -mx-2 w-full rounded-lg p-2 text-left transition-colors ${
-                        active ? "bg-primary/10" : "hover:bg-muted/60"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between text-sm">
-                        <span className={`truncate ${active ? "font-medium text-primary" : "text-card-foreground"}`}>
-                          {row.tipo.nome}
-                        </span>
-                        <span className="font-display text-sm font-semibold tabular-nums text-foreground">
-                          {row.total}
-                        </span>
-                      </div>
-                      <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-muted">
-                        <div
-                          className="h-full rounded-full bg-gradient-to-r from-primary to-primary-glow transition-all duration-500"
-                          style={{ width: `${pct}%` }}
-                        />
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+          <div className="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2 xl:grid-cols-3">
+
 
             {porEmpresa.map((row) => {
               const pctConcluido = row.total ? (row.concluidos / row.total) * 100 : 0;
