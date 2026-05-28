@@ -807,16 +807,23 @@ function PillMetric({
 }: {
   label: string;
   value: number;
-  tone?: "info" | "success";
+  tone?: "info" | "success" | "warning" | "destructive" | "total";
 }) {
   const cls =
     tone === "info"
-      ? "bg-info/20 text-info border-info/40"
+      ? "bg-info/20 text-info border-info/50 shadow-[0_0_0_1px_hsl(var(--info)/0.1)]"
       : tone === "success"
-        ? "bg-success/20 text-success border-success/40"
-        : "bg-secondary/70 text-foreground border-border";
+        ? "bg-success/20 text-success border-success/50 shadow-[0_0_0_1px_hsl(var(--success)/0.1)]"
+        : tone === "warning"
+          ? "bg-warning/25 text-warning-foreground border-warning/60"
+          : tone === "destructive"
+            ? "bg-destructive/20 text-destructive border-destructive/50"
+            : tone === "total"
+              ? "bg-gradient-to-br from-primary/15 to-primary/5 text-primary border-primary/40"
+              : "bg-secondary/70 text-foreground border-border";
+  const dim = value === 0 ? "opacity-50" : "";
   return (
-    <div className={`rounded-lg border px-2 py-1.5 shadow-sm sm:px-2.5 ${cls}`}>
+    <div className={`rounded-lg border px-2 py-1.5 shadow-sm sm:px-2.5 ${cls} ${dim}`}>
       <div className="text-[9px] font-semibold uppercase leading-tight tracking-[0.08em] sm:text-[10px]">{label}</div>
       <div className="mt-1 font-display text-base font-bold tabular-nums leading-none sm:text-lg">{value}</div>
     </div>
