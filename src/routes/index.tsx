@@ -137,10 +137,11 @@ function Painel() {
       .map((e) => {
         const procs = processos.filter((p) => p.empresa_id === e.id);
         const concluidos = procs.filter((p) => p.status === "concluido").length;
-        // Agrupa por status_detalhado (fallback para STATUS_LABEL[status])
+        // Agrupa por status_detalhado (apenas os que vieram da planilha)
         const detalheMap = new Map<string, { label: string; value: number; status: string }>();
         for (const p of procs) {
-          const label = (p.status_detalhado?.trim() || STATUS_LABEL[p.status] || p.status).toString();
+          const label = p.status_detalhado?.trim();
+          if (!label) continue;
           const key = `${p.status}::${label}`;
           const cur = detalheMap.get(key);
           if (cur) cur.value += 1;
@@ -320,7 +321,7 @@ function Painel() {
                       </span>
                     )}
                   </div>
-                  <div className="mt-4 flex max-h-44 flex-wrap gap-1.5 overflow-y-auto pr-1 sm:gap-2">
+                  <div className="mt-4 grid max-h-56 grid-cols-3 gap-1.5 overflow-y-auto pr-1 sm:gap-2">
                     <PillMetric label="Total" value={row.total} tone="total" />
                     {row.detalhes.map((d) => (
                       <PillMetric
@@ -843,8 +844,8 @@ function PillMetric({
               : "bg-secondary/70 text-foreground border-border";
   const dim = value === 0 ? "opacity-50" : "";
   return (
-    <div className={`min-w-[5.5rem] flex-1 basis-[5.5rem] rounded-lg border px-2 py-1.5 shadow-sm sm:px-2.5 ${cls} ${dim}`}>
-      <div className="line-clamp-2 break-words text-[9px] font-semibold uppercase leading-tight tracking-[0.08em] sm:text-[10px]">{label}</div>
+    <div className={`min-w-0 rounded-lg border px-2 py-1.5 shadow-sm sm:px-2.5 ${cls} ${dim}`}>
+      <div className="truncate text-[9px] font-semibold uppercase leading-tight tracking-[0.08em] sm:text-[10px]" title={label}>{label}</div>
       <div className="mt-1 font-display text-base font-bold tabular-nums leading-none sm:text-lg">{value}</div>
     </div>
   );
