@@ -137,10 +137,11 @@ function Painel() {
       .map((e) => {
         const procs = processos.filter((p) => p.empresa_id === e.id);
         const concluidos = procs.filter((p) => p.status === "concluido").length;
-        // Agrupa por status_detalhado (fallback para STATUS_LABEL[status])
+        // Agrupa por status_detalhado (apenas os que vieram da planilha)
         const detalheMap = new Map<string, { label: string; value: number; status: string }>();
         for (const p of procs) {
-          const label = (p.status_detalhado?.trim() || STATUS_LABEL[p.status] || p.status).toString();
+          const label = p.status_detalhado?.trim();
+          if (!label) continue;
           const key = `${p.status}::${label}`;
           const cur = detalheMap.get(key);
           if (cur) cur.value += 1;
