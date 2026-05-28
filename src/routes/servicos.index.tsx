@@ -1,5 +1,5 @@
 import { createFileRoute, useRouter, Link } from "@tanstack/react-router";
-import { useSuspenseQuery, queryOptions } from "@tanstack/react-query";
+import { useSuspenseQuery, queryOptions, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { parseISO } from "date-fns";
@@ -87,6 +87,7 @@ export const Route = createFileRoute("/servicos/")({
 function ServicosPage() {
   const { data } = useSuspenseQuery(servicosDataQuery);
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { empresas, templates, servicos } = data;
 
   const now = new Date();
@@ -159,36 +160,41 @@ function ServicosPage() {
       return n;
     });
 
+  const refresh = async () => {
+    await queryClient.invalidateQueries({ queryKey: ["servicos-data"] });
+    await router.invalidate({ sync: true });
+  };
+
   const handleCriar = async () => {
     if (!novoForm.empresa_id || !novoForm.template_id || !novoForm.data_inicial) return;
     const r = await criarServicoFromTemplate({ data: novoForm });
     setCreateOpen(false);
     setNovoForm({ empresa_id: "", template_id: "", data_inicial: toISODate(new Date()) });
     toast.success("Serviço criado!");
-    router.invalidate();
+    await refresh();
     setExpanded((p) => new Set(p).add(r.id));
   };
 
   const handleConcluir = async (servico_id: string, tarefa_id: string) => {
     await concluirTarefa({ data: { servico_id, tarefa_id } });
-    router.invalidate();
+    await refresh();
   };
 
   const handleReabrir = async (servico_id: string, tarefa_id: string) => {
     await reabrirTarefa({ data: { servico_id, tarefa_id } });
-    router.invalidate();
+    await refresh();
   };
 
   const handleExtend = async (servico_id: string, tarefa_id: string, dias: number) => {
     await extendTarefaDias({ data: { servico_id, tarefa_id, dias_extras: dias } });
     toast.success(`+${dias} dia(s)`);
-    router.invalidate();
+    await refresh();
   };
 
   const handleDelete = async (id: string) => {
     await deleteServico({ data: { id } });
     toast.success("Serviço excluído");
-    router.invalidate();
+    await refresh();
   };
 
   return (
