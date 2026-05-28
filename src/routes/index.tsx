@@ -844,8 +844,8 @@ function PillMetric({
               : "bg-secondary/70 text-foreground border-border";
   const dim = value === 0 ? "opacity-50" : "";
   return (
-    <div className={`min-w-[5.5rem] flex-1 basis-[5.5rem] rounded-lg border px-2 py-1.5 shadow-sm sm:px-2.5 ${cls} ${dim}`}>
-      <div className="line-clamp-2 break-words text-[9px] font-semibold uppercase leading-tight tracking-[0.08em] sm:text-[10px]">{label}</div>
+    <div className={`min-w-0 rounded-lg border px-2 py-1.5 shadow-sm sm:px-2.5 ${cls} ${dim}`}>
+      <div className="truncate text-[9px] font-semibold uppercase leading-tight tracking-[0.08em] sm:text-[10px]" title={label}>{label}</div>
       <div className="mt-1 font-display text-base font-bold tabular-nums leading-none sm:text-lg">{value}</div>
     </div>
   );
