@@ -321,7 +321,7 @@ function Painel() {
                       </span>
                     )}
                   </div>
-                  <div className="mt-4 flex max-h-44 flex-wrap gap-1.5 overflow-y-auto pr-1 sm:gap-2">
+                  <div className="mt-4 grid max-h-56 grid-cols-3 gap-1.5 overflow-y-auto pr-1 sm:gap-2">
                     <PillMetric label="Total" value={row.total} tone="total" />
                     {row.detalhes.map((d) => (
                       <PillMetric
