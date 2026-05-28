@@ -135,6 +135,8 @@ function Painel() {
           total: procs.length,
           ativos: procs.filter((p) => p.status === "ativo").length,
           concluidos: procs.filter((p) => p.status === "concluido").length,
+          suspensos: procs.filter((p) => p.status === "suspenso").length,
+          cancelados: procs.filter((p) => p.status === "cancelado").length,
           parados: procs.filter(isParado).length,
         };
       })
