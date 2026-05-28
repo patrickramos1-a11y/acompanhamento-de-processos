@@ -78,9 +78,15 @@ export const Route = createFileRoute("/templates/")({
 function TemplatesPage() {
   const { data } = useSuspenseQuery(servicosDataQuery);
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ nome: "", prazo_base_dias: 30, descricao: "" });
   const [editId, setEditId] = useState<string | null>(null);
+
+  const refresh = async () => {
+    await queryClient.invalidateQueries({ queryKey: ["servicos-data"] });
+    router.invalidate();
+  };
 
   const handleCreate = async () => {
     if (!form.nome.trim()) return;
@@ -88,14 +94,14 @@ function TemplatesPage() {
     setForm({ nome: "", prazo_base_dias: 30, descricao: "" });
     setOpen(false);
     toast.success("Template criado!");
-    router.invalidate();
+    await refresh();
     setEditId(t.id);
   };
 
   const handleDelete = async (id: string) => {
     await deleteTemplate({ data: { id } });
     toast.success("Template excluído");
-    router.invalidate();
+    await refresh();
   };
 
   const editingTemplate = editId ? data.templates.find((t) => t.id === editId) : null;
