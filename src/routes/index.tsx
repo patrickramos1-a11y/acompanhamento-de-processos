@@ -1147,17 +1147,30 @@ function EmpresaProcessosModal({
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onAbrirProcesso(p.id);
-                        }}
-                        className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2 py-1 text-xs font-medium text-foreground hover:bg-muted"
-                      >
-                        <ClipboardList className="h-3.5 w-3.5" />
-                        Ver acompanhamentos
-                      </button>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onAbrirProcesso(p.id);
+                          }}
+                          className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2 py-1 text-xs font-medium text-foreground hover:bg-muted"
+                        >
+                          <ClipboardList className="h-3.5 w-3.5" />
+                          Ver acompanhamentos
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onCriarTarefa(p.id);
+                          }}
+                          className="inline-flex items-center gap-1.5 rounded-md border border-primary/40 bg-primary/10 px-2 py-1 text-xs font-medium text-primary hover:bg-primary/20"
+                        >
+                          <ListPlus className="h-3.5 w-3.5" />
+                          Criar tarefa
+                        </button>
+                      </div>
                     </td>
+
                   </tr>
                 );
               })}
