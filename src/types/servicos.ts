@@ -50,6 +50,7 @@ export interface ServicoTarefa {
 export interface Servico {
   id: string;
   empresa_id: string;
+  processo_id?: string | null;
   template_id: string | null;
   nome: string;
   data_inicial: string;
