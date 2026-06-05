@@ -89,7 +89,54 @@ export const getServicosData = createServerFn({ method: "GET" }).handler(async (
   };
 });
 
+export const getServicosByProcesso = createServerFn({ method: "GET" })
+  .inputValidator((d: { processo_id: string }) => d)
+  .handler(async ({ data }) => {
+    const { data: srvs, error } = await supabaseAdmin
+      .from("servicos")
+      .select("*")
+      .eq("processo_id" as any, data.processo_id)
+      .order("criado_em", { ascending: false });
+    if (error) throw new Error(error.message);
+    const ids = (srvs ?? []).map((s) => s.id);
+    const { data: tarefas } = ids.length
+      ? await supabaseAdmin.from("servico_tarefas").select("*").in("servico_id", ids).order("ordem")
+      : { data: [] as any[] };
+    const servicos: Servico[] = (srvs ?? []).map((s) => ({
+      id: s.id,
+      empresa_id: s.empresa_id,
+      processo_id: (s as any).processo_id ?? null,
+      template_id: s.template_id,
+      nome: s.nome,
+      data_inicial: s.data_inicial,
+      prazo_base_dias: s.prazo_base_dias,
+      data_prevista_base: s.data_prevista_base,
+      data_prevista_atual: s.data_prevista_atual,
+      status: s.status,
+      tarefas: (tarefas ?? [])
+        .filter((t) => t.servico_id === s.id)
+        .map((t) => ({
+          id: t.id,
+          servico_id: t.servico_id,
+          titulo: t.titulo,
+          fase_nome: t.fase_nome,
+          duracao_dias: t.duracao_dias,
+          tipo_prazo: t.tipo_prazo as TipoPrazo,
+          impacta_prazo: t.impacta_prazo,
+          depende_de_servico_tarefa_id: t.depende_de_servico_tarefa_id,
+          gerar_apos_conclusao: t.gerar_apos_conclusao,
+          status: t.status,
+          data_prevista: t.data_prevista,
+          data_conclusao: t.data_conclusao,
+          template_tarefa_id: t.template_tarefa_id,
+          ordem: t.ordem,
+        })),
+    }));
+    return { servicos };
+  });
+
 export const getServicoById = createServerFn({ method: "GET" })
+
   .inputValidator((d: { id: string }) => d)
   .handler(async ({ data }) => {
     const { data: srv, error } = await supabaseAdmin
