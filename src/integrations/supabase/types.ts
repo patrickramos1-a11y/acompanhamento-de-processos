@@ -252,6 +252,7 @@ export type Database = {
           id: string
           nome: string
           prazo_base_dias: number
+          processo_id: string | null
           status: Database["public"]["Enums"]["status_servico"]
           template_id: string | null
         }
@@ -265,6 +266,7 @@ export type Database = {
           id?: string
           nome: string
           prazo_base_dias?: number
+          processo_id?: string | null
           status?: Database["public"]["Enums"]["status_servico"]
           template_id?: string | null
         }
@@ -278,6 +280,7 @@ export type Database = {
           id?: string
           nome?: string
           prazo_base_dias?: number
+          processo_id?: string | null
           status?: Database["public"]["Enums"]["status_servico"]
           template_id?: string | null
         }
