@@ -53,6 +53,7 @@ export const getServicosData = createServerFn({ method: "GET" }).handler(async (
   const servicos: Servico[] = (servicosRes.data ?? []).map((s) => ({
     id: s.id,
     empresa_id: s.empresa_id,
+    processo_id: (s as any).processo_id ?? null,
     template_id: s.template_id,
     nome: s.nome,
     data_inicial: s.data_inicial,
@@ -79,6 +80,7 @@ export const getServicosData = createServerFn({ method: "GET" }).handler(async (
         ordem: st.ordem,
       })),
   }));
+
 
   return {
     empresas: empresasRes.data ?? [],
