@@ -1330,10 +1330,13 @@ function CriarTarefaModal({
   );
 
   // reset on open
-  useMemoReset(processoId, () => {
-    setTemplateId("");
-    setDataInicial(format(new Date(), "yyyy-MM-dd"));
-  });
+  useEffect(() => {
+    if (processoId) {
+      setTemplateId("");
+      setDataInicial(format(new Date(), "yyyy-MM-dd"));
+    }
+  }, [processoId]);
+
 
   const queryClient = useQueryClient();
   const criarFn = useServerFn(criarServicoFromTemplate);
