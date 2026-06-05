@@ -1463,13 +1463,6 @@ function CriarTarefaModal({
   );
 }
 
-// Reset helper: re-runs `fn` whenever `key` changes (including to a fresh value)
-function useMemoReset(key: unknown, fn: () => void) {
-  useMemo(() => {
-    fn();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key]);
-}
 
 function ServicosDoProcesso({ processoId }: { processoId: string }) {
   const queryClient = useQueryClient();
