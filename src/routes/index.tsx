@@ -1,6 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useSuspenseQuery, queryOptions } from "@tanstack/react-query";
+import { useSuspenseQuery, queryOptions, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { getDashboard } from "@/lib/dashboard.functions";
+import {
+  getServicosData,
+  getServicosByProcesso,
+  criarServicoFromTemplate,
+  concluirTarefa,
+  reabrirTarefa,
+} from "@/lib/servicos.functions";
 import { useMemo, useState } from "react";
 import { format, parseISO, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -22,10 +30,13 @@ import {
   FileText,
   Search,
   Clock,
-  
   Settings,
   ClipboardList,
+  ListPlus,
+  Loader2,
+  ExternalLink,
 } from "lucide-react";
+
 
 const dashboardQuery = queryOptions({
   queryKey: ["dashboard"],
