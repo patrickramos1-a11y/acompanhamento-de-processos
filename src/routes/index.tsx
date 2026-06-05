@@ -1236,6 +1236,12 @@ function ProcessoTramitacoesModal({
         </DialogHeader>
 
         <div className="max-h-[65vh] overflow-auto">
+          {processoId && (
+            <ServicosDoProcesso processoId={processoId} />
+          )}
+          <div className="border-t border-border px-4 py-2.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground sm:px-6">
+            Tramitações
+          </div>
           {tramsDoProcesso.length === 0 ? (
             <div className="px-6 py-12 text-center text-sm text-muted-foreground">
               Nenhum acompanhamento registrado para este processo.
@@ -1282,6 +1288,7 @@ function ProcessoTramitacoesModal({
             </ul>
           )}
         </div>
+
       </DialogContent>
     </Dialog>
   );
