@@ -9,7 +9,7 @@ import {
   concluirTarefa,
   reabrirTarefa,
 } from "@/lib/servicos.functions";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { format, parseISO, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
