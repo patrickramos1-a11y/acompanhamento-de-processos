@@ -1,28 +1,55 @@
-## Objetivo
+# Plano: Tarefas vinculadas ao processo
 
-Colocar os filtros (Empresa, Tipo, Status, Responsável, Mês, Ano + busca) acima da seção **EMPRESAS**, mantendo o mesmo componente multi-seleção com busca interna (igual ao da segunda imagem), e fazendo com que os filtros recortem tanto os **cards de empresa** quanto a **tabela de processos**.
+Adicionar à linha do processo um botão "Criar tarefa" ao lado de "Ver acompanhamentos". A tarefa é um **serviço** criado a partir de um template, vinculado tanto à empresa quanto ao processo. O modal de acompanhamentos passa a mostrar e gerenciar esses serviços, e a tela de Serviços continua refletindo o mesmo estado em tempo real.
 
-## Mudanças (apenas `src/routes/index.tsx`)
+## 1. Banco de dados (migration)
 
-### 1. Reposicionar a barra de filtros
-- Mover o bloco `<div className="glass mb-4 grid ...">` (linhas 309–388, que já contém o input de busca + 6 `MultiSelect` + botão "Limpar filtros") para **acima da seção "Empresas"**, dentro do `<main>`, logo depois dos KPIs.
-- A seção "Processos" abaixo continua usando os mesmos estados (`empresaFiltro`, `statusFiltro`, etc.) — os filtros viram globais para a página.
+Adicionar vínculo opcional do serviço ao processo:
 
-### 2. Cards de empresa passam a respeitar os filtros
-- Trocar a base de `porEmpresa` de `processos` para `processosFiltrados` (já calculado mais abaixo). Mover o `useMemo` de `processosFiltrados` para **antes** de `porEmpresa` para evitar uso-antes-de-declarar.
-- Cards com `total === 0` continuam sendo escondidos (filtro `.filter((x) => x.total > 0)`), então os cards somem naturalmente quando o filtro de empresa estiver ativo em outras.
-- Se o filtro **Empresa** estiver selecionado, mostrar só os cards dessas empresas.
+- `servicos.processo_id uuid NULL` — referência lógica a `processos.id` (sem FK rígida, seguindo o padrão atual do projeto).
+- Índice em `servicos.processo_id` para listar rápido por processo.
 
-### 3. Filtro de Status passa a usar `status_detalhado`
-- Hoje as opções vêm de `STATUS_LABEL` (apenas: Ativo, Concluído, Cancelado, Suspenso).
-- Trocar por uma lista derivada dos `processos` agregando `status_detalhado` distintos (ex.: "EM ANÁLISE PELA RAMOS", "EM ANÁLISE PELO ÓRGÃO", "DEFERIDO", "NOTIFICADO"), ordenada alfabeticamente. Isso bate exatamente com as pills coloridas que aparecem nos cards.
-- Atualizar a lógica de filtro em `processosFiltrados`: comparar `statusFiltro` contra `p.status_detalhado?.trim()` em vez de `p.status`.
+Vários serviços por processo são suportados naturalmente (sem unique).
 
-### 4. Ajustes de UX
-- Manter os defaults atuais de Mês (mês atual) e Ano (ano atual) — só esses dois iniciam preenchidos.
-- A barra fica sticky-friendly: `glass` arredondado, com wrap horizontal no desktop e grid 1-coluna no mobile (já é o comportamento atual).
-- A `SectionTitle` de "Empresas" passa a mostrar a contagem filtrada: `Empresas (${porEmpresa.length})`, análogo ao que já é feito em "Processos".
+## 2. Backend (`src/lib/servicos.functions.ts`)
 
-### Fora de escopo
-- Aparência dos cards, KPIs do topo, modais e tabela de processos — sem mudanças visuais.
-- Nada de backend / migrations.
+- `criarServicoFromTemplate`: aceitar `processo_id?: string` opcional e persistir na nova coluna.
+- `getServicosData` e `getServicoById`: incluir `processo_id` no DTO de serviço.
+- Nova `getServicosByProcesso({ processo_id })`: retorna a lista de serviços do processo com suas tarefas — usada pelo modal de acompanhamentos.
+- `getServicosData` continua devolvendo todos os serviços para a tela de Serviços (lá eles aparecem normalmente, mesmo vinculados a processo).
+
+## 3. UI — Lista de processos (`src/routes/index.tsx`)
+
+Na coluna **AÇÕES** da tabela de processos, ao lado de "Ver acompanhamentos":
+
+- Novo botão **"Criar tarefa"** (ícone `ListPlus` ou `Plus`).
+- Abre um modal com:
+  - Empresa pré-preenchida (do processo) — somente leitura.
+  - Select de **Template** (carregado de `getServicosData`).
+  - Campo **Data inicial** (default = hoje).
+  - Botão "Criar" chama `criarServicoFromTemplate({ empresa_id, processo_id, template_id, data_inicial })`.
+- Após criar: invalidar caches (`servicos-data` e a query do modal) e fechar o modal.
+
+A barra de **Progresso** da linha continua refletindo a **etapa do processo** (sem alteração).
+
+## 4. UI — Modal "Ver acompanhamentos" (`ProcessoTramitacoesModal`)
+
+Acrescentar uma nova seção **"Tarefas / Serviços"** acima ou abaixo das tramitações:
+
+- Lista os serviços vinculados ao processo (via `getServicosByProcesso`).
+- Cada serviço mostra: nome do template, status, data prevista, e a lista de tarefas por fase.
+- Cada tarefa traz checkbox para **concluir/reabrir**, chamando `concluirTarefa` / `reabrirTarefa` já existentes.
+- Tarefas bloqueadas aparecem desabilitadas com indicação visual.
+- Link "Abrir serviço" leva para `/servicos/$id` para edição completa.
+- Após cada mutação: invalidar `["servicos-por-processo", processoId]` e `["servicos-data"]` para sincronizar a tela de Serviços.
+
+## 5. Sincronização bidirecional
+
+Como ambos os lados (modal de acompanhamentos e tela de Serviços) leem das mesmas tabelas (`servicos` / `servico_tarefas`) e usam as mesmas mutations, o estado é sempre o mesmo. As invalidações garantem que concluir uma tarefa em um lugar reflita imediatamente no outro ao recarregar/abrir.
+
+## Detalhes técnicos
+
+- Tipos: atualizar `src/types/servicos.ts` para incluir `processo_id?: string | null` em `Servico`.
+- Query keys novas: `["servicos-por-processo", processoId]`.
+- Reaproveitar `criarServicoFromTemplate`, `concluirTarefa`, `reabrirTarefa` — sem duplicar lógica.
+- Sem alteração na barra de progresso do processo nem na regra de "parados há mais de 30 dias".

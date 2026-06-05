@@ -1,7 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useSuspenseQuery, queryOptions } from "@tanstack/react-query";
+import { useSuspenseQuery, queryOptions, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { getDashboard } from "@/lib/dashboard.functions";
-import { useMemo, useState } from "react";
+import {
+  getServicosData,
+  getServicosByProcesso,
+  criarServicoFromTemplate,
+  concluirTarefa,
+  reabrirTarefa,
+} from "@/lib/servicos.functions";
+import { useEffect, useMemo, useState } from "react";
 import { format, parseISO, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
@@ -22,10 +30,13 @@ import {
   FileText,
   Search,
   Clock,
-  
   Settings,
   ClipboardList,
+  ListPlus,
+  Loader2,
+  ExternalLink,
 } from "lucide-react";
+
 
 const dashboardQuery = queryOptions({
   queryKey: ["dashboard"],
@@ -93,7 +104,9 @@ function Painel() {
 
   const [empresaModal, setEmpresaModal] = useState<string | null>(null);
   const [processoModal, setProcessoModal] = useState<string | null>(null);
+  const [criarTarefaProcesso, setCriarTarefaProcesso] = useState<string | null>(null);
   const [modalStatusFiltro, setModalStatusFiltro] = useState<string>("");
+
 
 
   const empresaMap = useMemo(() => new Map(empresas.map((e) => [e.id, e])), [empresas]);
@@ -714,6 +727,7 @@ function Painel() {
         processos={processos}
         isParado={isParado}
         onAbrirProcesso={(id) => setProcessoModal(id)}
+        onCriarTarefa={(id) => setCriarTarefaProcesso(id)}
       />
 
       <ProcessoTramitacoesModal
@@ -725,10 +739,18 @@ function Painel() {
         etapaMap={etapaMap}
         tramitacoes={tramitacoes}
       />
+
+      <CriarTarefaModal
+        processoId={criarTarefaProcesso}
+        processos={processos}
+        empresaMap={empresaMap}
+        onClose={() => setCriarTarefaProcesso(null)}
+      />
     </div>
 
   );
 }
+
 
 function KPI({
   icon,
@@ -882,6 +904,7 @@ function EmpresaProcessosModal({
   processos,
   isParado,
   onAbrirProcesso,
+  onCriarTarefa,
 }: {
   empresaId: string | null;
   onClose: () => void;
@@ -895,6 +918,8 @@ function EmpresaProcessosModal({
   processos: any[];
   isParado: (p: any) => boolean;
   onAbrirProcesso: (id: string) => void;
+  onCriarTarefa: (id: string) => void;
+
 }) {
   const empresa = empresaId ? empresas.find((e) => e.id === empresaId) : null;
   const grupo = empresa?.grupo_id ? grupos.get(empresa.grupo_id) : null;
@@ -1122,17 +1147,30 @@ function EmpresaProcessosModal({
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onAbrirProcesso(p.id);
-                        }}
-                        className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2 py-1 text-xs font-medium text-foreground hover:bg-muted"
-                      >
-                        <ClipboardList className="h-3.5 w-3.5" />
-                        Ver acompanhamentos
-                      </button>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onAbrirProcesso(p.id);
+                          }}
+                          className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2 py-1 text-xs font-medium text-foreground hover:bg-muted"
+                        >
+                          <ClipboardList className="h-3.5 w-3.5" />
+                          Ver acompanhamentos
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onCriarTarefa(p.id);
+                          }}
+                          className="inline-flex items-center gap-1.5 rounded-md border border-primary/40 bg-primary/10 px-2 py-1 text-xs font-medium text-primary hover:bg-primary/20"
+                        >
+                          <ListPlus className="h-3.5 w-3.5" />
+                          Criar tarefa
+                        </button>
+                      </div>
                     </td>
+
                   </tr>
                 );
               })}
@@ -1198,6 +1236,12 @@ function ProcessoTramitacoesModal({
         </DialogHeader>
 
         <div className="max-h-[65vh] overflow-auto">
+          {processoId && (
+            <ServicosDoProcesso processoId={processoId} />
+          )}
+          <div className="border-t border-border px-4 py-2.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground sm:px-6">
+            Tramitações
+          </div>
           {tramsDoProcesso.length === 0 ? (
             <div className="px-6 py-12 text-center text-sm text-muted-foreground">
               Nenhum acompanhamento registrado para este processo.
@@ -1244,7 +1288,320 @@ function ProcessoTramitacoesModal({
             </ul>
           )}
         </div>
+
       </DialogContent>
     </Dialog>
+  );
+}
+
+// ============================================================
+// Criar tarefa (serviço vinculado ao processo)
+// ============================================================
+
+const servicosDataQuery = queryOptions({
+  queryKey: ["servicos-data"],
+  queryFn: () => getServicosData(),
+});
+
+function CriarTarefaModal({
+  processoId,
+  processos,
+  empresaMap,
+  onClose,
+}: {
+  processoId: string | null;
+  processos: any[];
+  empresaMap: Map<string, any>;
+  onClose: () => void;
+}) {
+  const processo = processoId ? processos.find((p) => p.id === processoId) : null;
+  const empresa = processo ? empresaMap.get(processo.empresa_id) : null;
+
+  const { data, isLoading } = useQuery({
+    ...servicosDataQuery,
+    enabled: !!processoId,
+  });
+
+  const templates = data?.templates ?? [];
+
+  const [templateId, setTemplateId] = useState<string>("");
+  const [dataInicial, setDataInicial] = useState<string>(() =>
+    format(new Date(), "yyyy-MM-dd"),
+  );
+
+  // reset on open
+  useEffect(() => {
+    if (processoId) {
+      setTemplateId("");
+      setDataInicial(format(new Date(), "yyyy-MM-dd"));
+    }
+  }, [processoId]);
+
+
+  const queryClient = useQueryClient();
+  const criarFn = useServerFn(criarServicoFromTemplate);
+  const mutation = useMutation({
+    mutationFn: (vars: {
+      empresa_id: string;
+      processo_id: string;
+      template_id: string;
+      data_inicial: string;
+    }) => criarFn({ data: vars }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["servicos-data"] });
+      queryClient.invalidateQueries({ queryKey: ["servicos-por-processo"] });
+      onClose();
+    },
+  });
+
+  const disabled = !templateId || !dataInicial || mutation.isPending;
+
+  return (
+    <Dialog open={!!processoId} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="w-[calc(100vw-1rem)] max-w-[520px] p-0 sm:w-auto">
+        <DialogHeader className="border-b border-border bg-sidebar px-5 py-4 text-sidebar-foreground">
+          <DialogTitle className="flex items-center gap-2 text-base">
+            <ListPlus className="h-4 w-4" />
+            Criar tarefa
+          </DialogTitle>
+          <DialogDescription className="text-sidebar-foreground/70">
+            Gera um serviço a partir de um template, vinculado a este processo.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 px-5 py-5">
+          <div>
+            <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Empresa
+            </label>
+            <div className="rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-foreground">
+              {empresa?.nome ?? "—"}
+            </div>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Processo
+            </label>
+            <div className="rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-foreground">
+              {processo?.nome ?? "—"}
+              {processo?.numero_protocolo ? ` · ${processo.numero_protocolo}` : ""}
+            </div>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Template <span className="text-destructive">*</span>
+            </label>
+            <select
+              value={templateId}
+              onChange={(e) => setTemplateId(e.target.value)}
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+              disabled={isLoading}
+            >
+              <option value="">{isLoading ? "Carregando..." : "Selecione um template"}</option>
+              {templates.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.nome} · {t.prazo_base_dias} dias
+                </option>
+              ))}
+            </select>
+            {!isLoading && templates.length === 0 && (
+              <p className="mt-1 text-xs text-muted-foreground">
+                Nenhum template cadastrado. Crie um em <Link to="/templates" className="text-primary underline">Templates</Link>.
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Data inicial <span className="text-destructive">*</span>
+            </label>
+            <input
+              type="date"
+              value={dataInicial}
+              onChange={(e) => setDataInicial(e.target.value)}
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+            />
+          </div>
+
+          {mutation.isError && (
+            <p className="text-xs text-destructive">
+              {(mutation.error as Error)?.message ?? "Erro ao criar tarefa."}
+            </p>
+          )}
+        </div>
+
+        <div className="flex justify-end gap-2 border-t border-border bg-muted/30 px-5 py-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-md border border-border bg-background px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            disabled={disabled}
+            onClick={() => {
+              if (!processo || !templateId) return;
+              mutation.mutate({
+                empresa_id: processo.empresa_id,
+                processo_id: processo.id,
+                template_id: templateId,
+                data_inicial: dataInicial,
+              });
+            }}
+            className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {mutation.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+            Criar tarefa
+          </button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+
+function ServicosDoProcesso({ processoId }: { processoId: string }) {
+  const queryClient = useQueryClient();
+  const { data, isLoading } = useQuery({
+    queryKey: ["servicos-por-processo", processoId],
+    queryFn: () => getServicosByProcesso({ data: { processo_id: processoId } }),
+  });
+
+  const concluirFn = useServerFn(concluirTarefa);
+  const reabrirFn = useServerFn(reabrirTarefa);
+
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ["servicos-por-processo", processoId] });
+    queryClient.invalidateQueries({ queryKey: ["servicos-data"] });
+  };
+
+  const concluirMut = useMutation({
+    mutationFn: (vars: { servico_id: string; tarefa_id: string }) =>
+      concluirFn({ data: vars }),
+    onSuccess: invalidate,
+  });
+  const reabrirMut = useMutation({
+    mutationFn: (vars: { servico_id: string; tarefa_id: string }) =>
+      reabrirFn({ data: vars }),
+    onSuccess: invalidate,
+  });
+
+  const servicos = data?.servicos ?? [];
+
+  return (
+    <div>
+      <div className="flex items-center justify-between px-4 py-2.5 sm:px-6">
+        <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+          Tarefas / Serviços vinculados
+        </div>
+        {isLoading && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
+      </div>
+
+      {!isLoading && servicos.length === 0 && (
+        <div className="px-4 pb-4 text-xs text-muted-foreground sm:px-6">
+          Nenhuma tarefa vinculada. Use "Criar tarefa" na lista de processos.
+        </div>
+      )}
+
+      {servicos.length > 0 && (
+        <div className="space-y-3 px-4 pb-4 sm:px-6">
+          {servicos.map((s) => {
+            const total = s.tarefas.length;
+            const feitas = s.tarefas.filter((t) => t.status === "concluida").length;
+            const pct = total > 0 ? Math.round((feitas / total) * 100) : 0;
+            return (
+              <div key={s.id} className="rounded-lg border border-border bg-card">
+                <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2">
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-medium text-card-foreground">
+                      {s.nome}
+                    </div>
+                    <div className="text-[11px] text-muted-foreground">
+                      Prevista: {fmtDate(s.data_prevista_atual)} · {feitas}/{total} ({pct}%)
+                    </div>
+                  </div>
+                  <Link
+                    to="/servicos/$id"
+                    params={{ id: s.id }}
+                    className="inline-flex shrink-0 items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-[11px] font-medium text-foreground hover:bg-muted"
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                    Abrir serviço
+                  </Link>
+                </div>
+                <ul className="divide-y divide-border/60">
+                  {s.tarefas.map((t) => {
+                    const concluida = t.status === "concluida";
+                    const bloqueada = t.status === "bloqueada";
+                    const busy =
+                      (concluirMut.isPending && concluirMut.variables?.tarefa_id === t.id) ||
+                      (reabrirMut.isPending && reabrirMut.variables?.tarefa_id === t.id);
+                    return (
+                      <li key={t.id} className="flex items-start gap-2 px-3 py-2">
+                        <button
+                          type="button"
+                          disabled={bloqueada || busy}
+                          onClick={() => {
+                            if (concluida) {
+                              reabrirMut.mutate({ servico_id: s.id, tarefa_id: t.id });
+                            } else {
+                              concluirMut.mutate({ servico_id: s.id, tarefa_id: t.id });
+                            }
+                          }}
+                          className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border ${
+                            concluida
+                              ? "border-success bg-success text-success-foreground"
+                              : bloqueada
+                                ? "border-border bg-muted text-muted-foreground cursor-not-allowed"
+                                : "border-border bg-background hover:border-primary"
+                          } disabled:opacity-60`}
+                          title={
+                            bloqueada
+                              ? "Bloqueada: aguarda dependência"
+                              : concluida
+                                ? "Reabrir tarefa"
+                                : "Concluir tarefa"
+                          }
+                        >
+                          {busy ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : concluida ? (
+                            <CheckCircle2 className="h-3 w-3" />
+                          ) : null}
+                        </button>
+                        <div className="min-w-0 flex-1">
+                          <div
+                            className={`text-xs ${
+                              concluida ? "text-muted-foreground line-through" : "text-card-foreground"
+                            }`}
+                          >
+                            {t.titulo}
+                          </div>
+                          <div className="text-[10px] text-muted-foreground">
+                            {t.fase_nome ? `${t.fase_nome} · ` : ""}
+                            Prevista: {fmtDate(t.data_prevista)}
+                            {t.data_conclusao ? ` · Concluída: ${fmtDate(t.data_conclusao)}` : ""}
+                            {bloqueada ? " · bloqueada" : ""}
+                          </div>
+                        </div>
+                      </li>
+                    );
+                  })}
+                  {s.tarefas.length === 0 && (
+                    <li className="px-3 py-2 text-[11px] text-muted-foreground">
+                      Sem tarefas neste serviço.
+                    </li>
+                  )}
+                </ul>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
