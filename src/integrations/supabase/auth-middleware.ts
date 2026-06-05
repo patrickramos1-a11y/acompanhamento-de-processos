@@ -5,7 +5,7 @@ import { createClient } from '@supabase/supabase-js'
 import type { Database } from './types'
 
 const DEFAULT_SUPABASE_URL = 'https://lxvwbmjjsjdtfkccntnw.supabase.co';
-const DEFAULT_SUPABASE_PUBLISHABLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJIUzI1NiIsInJlZiI6Imx4dndibWpqc2pkdGZrY2NudG53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzMTU2ODEsImV4cCI6MjA5NDg5MTY4MX0.wL4XVnZ92h8lRF9IeDk1uKet1d2O7iR8_JrycCSp7E0';
+const DEFAULT_SUPABASE_PUBLISHABLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx4dndibWpqc2pkdGZrY2NudG53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzMTU2ODEsImV4cCI6MjA5NDg5MTY4MX0.wL4XVnZ92h8lRF9IeDk1uKet1d2O7iR8_JrycCSp7E0';
 
 export const requireSupabaseAuth = createMiddleware({ type: 'function' }).server(
   async ({ next }) => {
