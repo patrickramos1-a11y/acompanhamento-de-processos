@@ -904,6 +904,7 @@ function EmpresaProcessosModal({
   processos,
   isParado,
   onAbrirProcesso,
+  onCriarTarefa,
 }: {
   empresaId: string | null;
   onClose: () => void;
@@ -917,6 +918,8 @@ function EmpresaProcessosModal({
   processos: any[];
   isParado: (p: any) => boolean;
   onAbrirProcesso: (id: string) => void;
+  onCriarTarefa: (id: string) => void;
+
 }) {
   const empresa = empresaId ? empresas.find((e) => e.id === empresaId) : null;
   const grupo = empresa?.grupo_id ? grupos.get(empresa.grupo_id) : null;
