@@ -727,6 +727,7 @@ function Painel() {
         processos={processos}
         isParado={isParado}
         onAbrirProcesso={(id) => setProcessoModal(id)}
+        onCriarTarefa={(id) => setCriarTarefaProcesso(id)}
       />
 
       <ProcessoTramitacoesModal
@@ -738,10 +739,18 @@ function Painel() {
         etapaMap={etapaMap}
         tramitacoes={tramitacoes}
       />
+
+      <CriarTarefaModal
+        processoId={criarTarefaProcesso}
+        processos={processos}
+        empresaMap={empresaMap}
+        onClose={() => setCriarTarefaProcesso(null)}
+      />
     </div>
 
   );
 }
+
 
 function KPI({
   icon,
