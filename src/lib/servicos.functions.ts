@@ -236,7 +236,7 @@ export const deleteTemplateTarefa = createServerFn({ method: "POST" })
 // ============================================================
 
 export const criarServicoFromTemplate = createServerFn({ method: "POST" })
-  .inputValidator((d: { empresa_id: string; template_id: string; data_inicial: string }) => d)
+  .inputValidator((d: { empresa_id: string; template_id: string; data_inicial: string; processo_id?: string | null }) => d)
   .handler(async ({ data }) => {
     // Carrega template
     const { data: tpl, error: tplErr } = await supabaseAdmin
@@ -255,6 +255,7 @@ export const criarServicoFromTemplate = createServerFn({ method: "POST" })
     // Cria serviço
     const { data: srv, error: srvErr } = await supabaseAdmin.from("servicos").insert({
       empresa_id: data.empresa_id,
+      processo_id: data.processo_id ?? null,
       template_id: tpl.id,
       nome: tpl.nome,
       data_inicial: data.data_inicial,
@@ -262,8 +263,9 @@ export const criarServicoFromTemplate = createServerFn({ method: "POST" })
       data_prevista_base: dataPrevistaBase,
       data_prevista_atual: dataPrevistaBase,
       status: "em_andamento",
-    }).select().single();
+    } as any).select().single();
     if (srvErr || !srv) throw new Error(srvErr?.message ?? "Falha ao criar serviço");
+
 
     // Cria tarefas mapeando ids
     const idMap = new Map<string, string>();
