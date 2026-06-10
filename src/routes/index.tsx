@@ -1328,12 +1328,23 @@ function CriarTarefaModal({
   const [dataInicial, setDataInicial] = useState<string>(() =>
     format(new Date(), "yyyy-MM-dd"),
   );
+  const [createdServicoId, setCreatedServicoId] = useState<string | null>(null);
+
+  const { data: servicosProcessoData, isLoading: isLoadingServicosProcesso } = useQuery({
+    queryKey: ["servicos-por-processo", processoId],
+    queryFn: () => getServicosByProcesso({ data: { processo_id: processoId! } }),
+    enabled: !!processoId,
+  });
+
+  const servicosDoProcesso = servicosProcessoData?.servicos ?? [];
+  const tarefasDoProcesso = servicosDoProcesso.reduce((total, servico) => total + servico.tarefas.length, 0);
 
   // reset on open
   useEffect(() => {
     if (processoId) {
       setTemplateId("");
       setDataInicial(format(new Date(), "yyyy-MM-dd"));
+      setCreatedServicoId(null);
     }
   }, [processoId]);
 
@@ -1347,10 +1358,11 @@ function CriarTarefaModal({
       template_id: string;
       data_inicial: string;
     }) => criarFn({ data: vars }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["servicos-data"] });
-      queryClient.invalidateQueries({ queryKey: ["servicos-por-processo"] });
-      onClose();
+    onSuccess: async (result) => {
+      setTemplateId("");
+      setCreatedServicoId(result.id);
+      await queryClient.invalidateQueries({ queryKey: ["servicos-data"] });
+      await queryClient.invalidateQueries({ queryKey: ["servicos-por-processo", processo?.id] });
     },
   });
 
@@ -1358,7 +1370,7 @@ function CriarTarefaModal({
 
   return (
     <Dialog open={!!processoId} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="w-[calc(100vw-1rem)] max-w-[520px] p-0 sm:w-auto">
+      <DialogContent className="w-[calc(100vw-1rem)] max-w-[980px] p-0 sm:w-[calc(100vw-2rem)]">
         <DialogHeader className="border-b border-border bg-sidebar px-5 py-4 text-sidebar-foreground">
           <DialogTitle className="flex items-center gap-2 text-base">
             <ListPlus className="h-4 w-4" />
@@ -1369,7 +1381,8 @@ function CriarTarefaModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 px-5 py-5">
+        <div className="grid max-h-[72vh] overflow-auto lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+          <div className="space-y-4 border-b border-border px-5 py-5 lg:border-b-0 lg:border-r">
           <div>
             <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-muted-foreground">
               Empresa
@@ -1430,6 +1443,36 @@ function CriarTarefaModal({
               {(mutation.error as Error)?.message ?? "Erro ao criar tarefa."}
             </p>
           )}
+          {createdServicoId && (
+            <div className="rounded-lg border border-success/30 bg-success/10 px-3 py-2 text-xs text-success">
+              Tarefa criada e vinculada ao processo. Ela ja aparece na lista ao lado.
+            </div>
+          )}
+          </div>
+
+          <div className="bg-muted/20 px-5 py-5">
+            <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
+              <div>
+                <h3 className="text-sm font-semibold text-foreground">Tarefas ja criadas neste processo</h3>
+                <p className="text-xs text-muted-foreground">
+                  {isLoadingServicosProcesso
+                    ? "Carregando vinculos..."
+                    : `${servicosDoProcesso.length} servico(s), ${tarefasDoProcesso} tarefa(s) vinculada(s).`}
+                </p>
+              </div>
+              {createdServicoId && (
+                <Link
+                  to="/servicos/$id"
+                  params={{ id: createdServicoId }}
+                  className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-[11px] font-medium text-foreground hover:bg-muted"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                  Abrir criado
+                </Link>
+              )}
+            </div>
+            {processoId && <ServicosDoProcesso processoId={processoId} embedded />}
+          </div>
         </div>
 
         <div className="flex justify-end gap-2 border-t border-border bg-muted/30 px-5 py-3">
@@ -1455,7 +1498,7 @@ function CriarTarefaModal({
             className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {mutation.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-            Criar tarefa
+            Criar e manter aberto
           </button>
         </div>
       </DialogContent>
@@ -1464,7 +1507,7 @@ function CriarTarefaModal({
 }
 
 
-function ServicosDoProcesso({ processoId }: { processoId: string }) {
+function ServicosDoProcesso({ processoId, embedded = false }: { processoId: string; embedded?: boolean }) {
   const queryClient = useQueryClient();
   const { data, isLoading } = useQuery({
     queryKey: ["servicos-por-processo", processoId],
@@ -1494,7 +1537,7 @@ function ServicosDoProcesso({ processoId }: { processoId: string }) {
 
   return (
     <div>
-      <div className="flex items-center justify-between px-4 py-2.5 sm:px-6">
+      <div className={`flex items-center justify-between ${embedded ? "px-0 pb-2" : "px-4 py-2.5 sm:px-6"}`}>
         <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
           Tarefas / Serviços vinculados
         </div>
@@ -1502,13 +1545,13 @@ function ServicosDoProcesso({ processoId }: { processoId: string }) {
       </div>
 
       {!isLoading && servicos.length === 0 && (
-        <div className="px-4 pb-4 text-xs text-muted-foreground sm:px-6">
-          Nenhuma tarefa vinculada. Use "Criar tarefa" na lista de processos.
+        <div className={`${embedded ? "rounded-lg border border-dashed border-border bg-background px-4 py-6 text-center" : "px-4 pb-4 sm:px-6"} text-xs text-muted-foreground`}>
+          Nenhuma tarefa vinculada a este processo ainda.
         </div>
       )}
 
       {servicos.length > 0 && (
-        <div className="space-y-3 px-4 pb-4 sm:px-6">
+        <div className={`${embedded ? "max-h-[420px] overflow-auto pr-1" : "px-4 pb-4 sm:px-6"} space-y-3`}>
           {servicos.map((s) => {
             const total = s.tarefas.length;
             const feitas = s.tarefas.filter((t) => t.status === "concluida").length;
