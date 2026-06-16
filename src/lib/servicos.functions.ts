@@ -234,6 +234,15 @@ export const addTemplateFase = createServerFn({ method: "POST" })
     return f;
   });
 
+export const updateTemplateFase = createServerFn({ method: "POST" })
+  .inputValidator((d: { id: string; nome?: string; ordem?: number }) => d)
+  .handler(async ({ data }) => {
+    const { id, ...rest } = data;
+    const { error } = await supabaseAdmin.from("template_fases").update(rest).eq("id", id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 export const deleteTemplateFase = createServerFn({ method: "POST" })
   .inputValidator((d: { id: string }) => d)
   .handler(async ({ data }) => {

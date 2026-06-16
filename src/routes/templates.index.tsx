@@ -8,8 +8,10 @@ import {
   deleteTemplate,
   updateTemplateMeta,
   addTemplateFase,
+  updateTemplateFase,
   deleteTemplateFase,
   addTemplateTarefa,
+  updateTemplateTarefa,
   deleteTemplateTarefa,
 } from "@/lib/servicos.functions";
 import { AppHeader } from "@/components/app-header";
@@ -53,7 +55,7 @@ import {
   ChevronDown,
   Pencil,
 } from "lucide-react";
-import type { Template, TipoPrazo } from "@/types/servicos";
+import type { Template, TemplateTarefa, TipoPrazo } from "@/types/servicos";
 
 const servicosDataQuery = queryOptions({
   queryKey: ["servicos-data"],
@@ -259,15 +261,20 @@ function TemplateEditor({
   });
   const [addingFase, setAddingFase] = useState(false);
   const [novaFase, setNovaFase] = useState("");
+  const [editingFaseId, setEditingFaseId] = useState<string | null>(null);
+  const [faseForm, setFaseForm] = useState({ nome: "", ordem: 1 });
   const [addingTarefa, setAddingTarefa] = useState<string | null>(null);
-  const [taskForm, setTaskForm] = useState({
+  const defaultTaskForm = {
     titulo: "",
     duracao_dias: 3,
     tipo_prazo: "RELATIVO_AO_INICIO" as TipoPrazo,
     impacta_prazo: true,
     depende_de_template_tarefa_id: null as string | null,
     gerar_apos_conclusao: false,
-  });
+  };
+  const [taskForm, setTaskForm] = useState(defaultTaskForm);
+  const [editingTarefaId, setEditingTarefaId] = useState<string | null>(null);
+  const [editTaskForm, setEditTaskForm] = useState(defaultTaskForm);
 
   const saveMeta = async () => {
     await updateTemplateMeta({ data: { id: template.id, ...meta } });
@@ -292,6 +299,21 @@ function TemplateEditor({
     onChanged();
   };
 
+  const startEditFase = (fase: { id: string; nome: string; ordem: number }) => {
+    setEditingFaseId(fase.id);
+    setFaseForm({ nome: fase.nome, ordem: fase.ordem });
+  };
+
+  const saveFase = async (id: string) => {
+    if (!faseForm.nome.trim()) return;
+    await updateTemplateFase({
+      data: { id, nome: faseForm.nome.trim(), ordem: faseForm.ordem },
+    });
+    setEditingFaseId(null);
+    toast.success("Fase atualizada");
+    onChanged();
+  };
+
   const addTarefa = async (faseId: string) => {
     if (!taskForm.titulo.trim()) return;
     await addTemplateTarefa({
@@ -301,16 +323,35 @@ function TemplateEditor({
         ordem: 999,
       },
     });
-    setTaskForm({
-      titulo: "",
-      duracao_dias: 3,
-      tipo_prazo: "RELATIVO_AO_INICIO",
-      impacta_prazo: true,
-      depende_de_template_tarefa_id: null,
-      gerar_apos_conclusao: false,
-    });
+    setTaskForm(defaultTaskForm);
     setAddingTarefa(null);
     toast.success("Tarefa adicionada");
+    onChanged();
+  };
+
+  const startEditTarefa = (tarefa: TemplateTarefa) => {
+    setEditingTarefaId(tarefa.id);
+    setEditTaskForm({
+      titulo: tarefa.titulo,
+      duracao_dias: tarefa.duracao_dias,
+      tipo_prazo: tarefa.tipo_prazo,
+      impacta_prazo: tarefa.impacta_prazo,
+      depende_de_template_tarefa_id: tarefa.depende_de_template_tarefa_id,
+      gerar_apos_conclusao: tarefa.gerar_apos_conclusao,
+    });
+  };
+
+  const saveTarefa = async (id: string) => {
+    if (!editTaskForm.titulo.trim()) return;
+    await updateTemplateTarefa({
+      data: {
+        id,
+        ...editTaskForm,
+        titulo: editTaskForm.titulo.trim(),
+      },
+    });
+    setEditingTarefaId(null);
+    toast.success("Tarefa atualizada");
     onChanged();
   };
 
@@ -387,15 +428,50 @@ function TemplateEditor({
       <div className="space-y-3">
         {template.fases.map((f) => (
           <div key={f.id} className="rounded-xl border border-border bg-card p-4">
-            <div className="mb-3 flex items-center justify-between">
-              <div className="flex items-center gap-2">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              {editingFaseId === f.id ? (
+                <div className="grid flex-1 gap-2 sm:grid-cols-[96px_1fr_auto_auto]">
+                  <Input
+                    type="number"
+                    value={faseForm.ordem}
+                    onChange={(e) =>
+                      setFaseForm({ ...faseForm, ordem: parseInt(e.target.value) || 1 })
+                    }
+                    aria-label="Ordem da fase"
+                  />
+                  <Input
+                    value={faseForm.nome}
+                    onChange={(e) => setFaseForm({ ...faseForm, nome: e.target.value })}
+                    aria-label="Nome da fase"
+                    autoFocus
+                  />
+                  <Button size="sm" onClick={() => saveFase(f.id)}>
+                    Salvar
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => setEditingFaseId(null)}>
+                    Cancelar
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
                 <Badge variant="outline">Fase {f.ordem}</Badge>
                 <span className="font-medium text-foreground">{f.nome}</span>
                 <span className="text-xs text-muted-foreground">
                   · {f.tarefas.length} tarefa(s)
                 </span>
-              </div>
+                </div>
+              )}
               <div className="flex gap-1">
+                {editingFaseId !== f.id && (
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    title="Editar fase"
+                    onClick={() => startEditFase(f)}
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
+                )}
                 <Button size="sm" variant="ghost" onClick={() => setAddingTarefa(f.id)}>
                   <Plus className="mr-1 h-3.5 w-3.5" />
                   Tarefa
@@ -428,8 +504,19 @@ function TemplateEditor({
               {f.tarefas.map((t) => (
                 <div
                   key={t.id}
-                  className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2 text-sm"
+                  className="rounded-lg bg-muted/40 px-3 py-2 text-sm"
                 >
+                  {editingTarefaId === t.id ? (
+                    <TaskFormFields
+                      form={editTaskForm}
+                      setForm={setEditTaskForm}
+                      tarefas={allTarefas.filter((tt) => tt.id !== t.id)}
+                      onSave={() => saveTarefa(t.id)}
+                      onCancel={() => setEditingTarefaId(null)}
+                      saveLabel="Salvar tarefa"
+                    />
+                  ) : (
+                    <div className="flex items-center justify-between gap-2">
                   <div className="flex-1">
                     <span className="font-medium">{t.titulo}</span>
                     <span className="ml-2 text-xs text-muted-foreground">
@@ -439,9 +526,21 @@ function TemplateEditor({
                       {t.gerar_apos_conclusao && " • gerar após"}
                     </span>
                   </div>
-                  <Button size="icon" variant="ghost" onClick={() => removeTarefa(t.id)}>
-                    <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                  </Button>
+                  <div className="flex gap-1">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      title="Editar tarefa"
+                      onClick={() => startEditTarefa(t)}
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button size="icon" variant="ghost" onClick={() => removeTarefa(t.id)}>
+                      <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                    </Button>
+                  </div>
+                    </div>
+                  )}
                 </div>
               ))}
               {f.tarefas.length === 0 && (
@@ -548,6 +647,119 @@ function TemplateEditor({
       <div className="flex justify-end">
         <Button variant="outline" onClick={onClose}>
           Fechar
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+type TaskFormState = {
+  titulo: string;
+  duracao_dias: number;
+  tipo_prazo: TipoPrazo;
+  impacta_prazo: boolean;
+  depende_de_template_tarefa_id: string | null;
+  gerar_apos_conclusao: boolean;
+};
+
+function TaskFormFields({
+  form,
+  setForm,
+  tarefas,
+  onSave,
+  onCancel,
+  saveLabel,
+}: {
+  form: TaskFormState;
+  setForm: (form: TaskFormState) => void;
+  tarefas: TemplateTarefa[];
+  onSave: () => void;
+  onCancel: () => void;
+  saveLabel: string;
+}) {
+  return (
+    <div className="space-y-3">
+      <div>
+        <Label>Titulo *</Label>
+        <Input
+          value={form.titulo}
+          onChange={(e) => setForm({ ...form, titulo: e.target.value })}
+          autoFocus
+        />
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <Label>Duracao (dias)</Label>
+          <Input
+            type="number"
+            value={form.duracao_dias}
+            onChange={(e) =>
+              setForm({ ...form, duracao_dias: parseInt(e.target.value) || 0 })
+            }
+          />
+        </div>
+        <div>
+          <Label>Tipo prazo</Label>
+          <Select
+            value={form.tipo_prazo}
+            onValueChange={(v) => setForm({ ...form, tipo_prazo: v as TipoPrazo })}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="RELATIVO_AO_INICIO">Relativo ao inicio</SelectItem>
+              <SelectItem value="RELATIVO_A_CONCLUSAO_DE_TAREFA">
+                Relativo a conclusao
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      <div>
+        <Label>Depende de</Label>
+        <Select
+          value={form.depende_de_template_tarefa_id ?? "none"}
+          onValueChange={(v) =>
+            setForm({
+              ...form,
+              depende_de_template_tarefa_id: v === "none" ? null : v,
+            })
+          }
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Nenhuma" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">Nenhuma</SelectItem>
+            {tarefas.map((tt) => (
+              <SelectItem key={tt.id} value={tt.id}>
+                {tt.titulo}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="flex items-center justify-between">
+        <Label>Impacta prazo</Label>
+        <Switch
+          checked={form.impacta_prazo}
+          onCheckedChange={(v) => setForm({ ...form, impacta_prazo: v })}
+        />
+      </div>
+      <div className="flex items-center justify-between">
+        <Label>Gerar apos conclusao do pai</Label>
+        <Switch
+          checked={form.gerar_apos_conclusao}
+          onCheckedChange={(v) => setForm({ ...form, gerar_apos_conclusao: v })}
+        />
+      </div>
+      <div className="flex gap-2">
+        <Button onClick={onSave} className="flex-1">
+          {saveLabel}
+        </Button>
+        <Button variant="ghost" onClick={onCancel}>
+          Cancelar
         </Button>
       </div>
     </div>
