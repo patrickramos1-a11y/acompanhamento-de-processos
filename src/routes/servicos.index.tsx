@@ -10,6 +10,7 @@ import {
   concluirTarefa,
   reabrirTarefa,
   extendTarefaDias,
+  cancelarTarefa,
 } from "@/lib/servicos.functions";
 import { AppHeader } from "@/components/app-header";
 import { MultiSelect } from "@/components/multi-select";
@@ -56,6 +57,7 @@ import {
   RotateCcw,
   CalendarPlus,
   Building2,
+  XCircle,
 } from "lucide-react";
 import { calcularProgresso, formatDate, tarefaAtrasada, toISODate } from "@/lib/dateCalculations";
 
@@ -148,6 +150,7 @@ function ServicosPage() {
   const kpis = {
     servicos: filtered.length,
     concluidas: allTarefas.filter((t) => t.status === "concluida").length,
+    canceladas: allTarefas.filter((t) => t.status === "cancelada").length,
     atrasadas: allTarefas.filter((t) => tarefaAtrasada(t)).length,
     pendentes: allTarefas.filter((t) => t.status === "pendente" && !tarefaAtrasada(t)).length,
   };
@@ -191,6 +194,12 @@ function ServicosPage() {
     await refresh();
   };
 
+  const handleCancelarTarefa = async (servico_id: string, tarefa_id: string) => {
+    const res = await cancelarTarefa({ data: { servico_id, tarefa_id } });
+    toast.success(`${res.tarefasCanceladas} tarefa(s) cancelada(s)`);
+    await refresh();
+  };
+
   const handleDelete = async (id: string) => {
     await deleteServico({ data: { id } });
     toast.success("Serviço excluído");
@@ -212,7 +221,7 @@ function ServicosPage() {
         <section className="grid gap-3 grid-cols-2 sm:gap-4 lg:grid-cols-4">
           <Kpi icon={<ClipboardList />} label="Serviços" value={kpis.servicos} tone="default" />
           <Kpi icon={<Check />} label="Concluídas" value={kpis.concluidas} tone="success" />
-          <Kpi icon={<AlertTriangle />} label="Atrasadas" value={kpis.atrasadas} tone="warning" />
+          <Kpi icon={<XCircle />} label="Canceladas" value={kpis.canceladas} tone="default" />
           <Kpi icon={<Clock />} label="Pendentes" value={kpis.pendentes} tone="info" />
         </section>
 
@@ -381,7 +390,9 @@ function ServicosPage() {
                           <div
                             key={t.id}
                             className={`flex flex-col gap-2 rounded-lg border px-3 py-2 text-sm sm:flex-row sm:items-center sm:gap-3 ${
-                              t.status === "concluida"
+                              t.status === "cancelada"
+                                ? "border-muted bg-muted/40 opacity-75"
+                                : t.status === "concluida"
                                 ? "border-success/30 bg-success/5"
                                 : isLate
                                   ? "border-destructive/30 bg-destructive/5"
@@ -393,10 +404,21 @@ function ServicosPage() {
                             <TaskStatusIcon status={t.status} isLate={isLate} />
                             <div className="min-w-0 flex-1">
                               <div className="flex flex-wrap items-center gap-2">
-                                <span className={`break-words font-medium ${t.status === "concluida" ? "line-through opacity-60" : ""}`}>
+                                <span
+                                  className={`break-words font-medium ${
+                                    t.status === "concluida" || t.status === "cancelada"
+                                      ? "line-through opacity-60"
+                                      : ""
+                                  }`}
+                                >
                                   {t.titulo}
                                 </span>
                                 <Badge variant="outline" className="text-[10px]">{t.fase_nome}</Badge>
+                                {t.status === "cancelada" && (
+                                  <Badge variant="outline" className="border-muted-foreground/40 text-[10px] text-muted-foreground">
+                                    cancelada
+                                  </Badge>
+                                )}
                                 {t.impacta_prazo && (
                                   <span className="text-[10px] text-muted-foreground">impacta prazo</span>
                                 )}
@@ -407,6 +429,30 @@ function ServicosPage() {
                               </p>
                             </div>
                             <div className="flex shrink-0 flex-wrap items-center gap-1 sm:justify-end">
+                              {(t.status === "pendente" || t.status === "bloqueada") && (
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button size="sm" variant="ghost" title="Cancelar atividade" className="h-8 gap-1 text-destructive hover:text-destructive">
+                                      <XCircle className="h-3.5 w-3.5" />
+                                      <span className="hidden sm:inline">Cancelar</span>
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Cancelar atividade?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Esta atividade e todas as tarefas que dependem dela serao canceladas. Elas nao poderao mais ser concluidas.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Voltar</AlertDialogCancel>
+                                      <AlertDialogAction onClick={() => handleCancelarTarefa(s.id, t.id)}>
+                                        Cancelar atividade
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              )}
                               {t.status === "pendente" && (
                                 <>
                                   <Button size="sm" variant="ghost" onClick={() => handleExtend(s.id, t.id, 1)} title="+1 dia" className="h-8 w-8 p-0">
@@ -476,6 +522,7 @@ function StatusBadge({ status, atrasado }: { status: string; atrasado: boolean }
 }
 
 function TaskStatusIcon({ status, isLate }: { status: string; isLate: boolean }) {
+  if (status === "cancelada") return <XCircle className="h-4 w-4 text-muted-foreground" />;
   if (status === "concluida") return <Check className="h-4 w-4 text-success" />;
   if (status === "bloqueada") return <Lock className="h-4 w-4 text-muted-foreground" />;
   if (isLate) return <AlertTriangle className="h-4 w-4 text-destructive" />;

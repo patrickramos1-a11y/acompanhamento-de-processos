@@ -390,10 +390,55 @@ export const reabrirTarefa = createServerFn({ method: "POST" })
     const { error } = await supabaseAdmin
       .from("servico_tarefas")
       .update({ status: "pendente", data_conclusao: null })
-      .eq("id", data.tarefa_id);
+      .eq("id", data.tarefa_id)
+      .eq("status", "concluida");
     if (error) throw new Error(error.message);
     await recalcAndPersist(data.servico_id);
     return { ok: true };
+  });
+
+export const cancelarTarefa = createServerFn({ method: "POST" })
+  .inputValidator((d: { servico_id: string; tarefa_id: string }) => d)
+  .handler(async ({ data }) => {
+    const { data: tarefas, error } = await supabaseAdmin
+      .from("servico_tarefas")
+      .select("id,depende_de_servico_tarefa_id,status")
+      .eq("servico_id", data.servico_id);
+    if (error) throw new Error(error.message);
+
+    const idsParaCancelar = new Set<string>([data.tarefa_id]);
+    let mudou = true;
+    while (mudou) {
+      mudou = false;
+      for (const tarefa of tarefas ?? []) {
+        if (
+          tarefa.depende_de_servico_tarefa_id &&
+          idsParaCancelar.has(tarefa.depende_de_servico_tarefa_id) &&
+          !idsParaCancelar.has(tarefa.id)
+        ) {
+          idsParaCancelar.add(tarefa.id);
+          mudou = true;
+        }
+      }
+    }
+
+    const ids = (tarefas ?? [])
+      .filter((tarefa) => idsParaCancelar.has(tarefa.id) && tarefa.status !== "concluida")
+      .map((tarefa) => tarefa.id);
+
+    if (ids.length === 0) {
+      await recalcAndPersist(data.servico_id);
+      return { ok: true, tarefasCanceladas: 0 };
+    }
+
+    const { error: updateError } = await supabaseAdmin
+      .from("servico_tarefas")
+      .update({ status: "cancelada", data_conclusao: null })
+      .in("id", ids);
+    if (updateError) throw new Error(updateError.message);
+
+    await recalcAndPersist(data.servico_id);
+    return { ok: true, tarefasCanceladas: ids.length };
   });
 
 export const extendTarefaDias = createServerFn({ method: "POST" })

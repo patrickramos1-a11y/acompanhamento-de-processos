@@ -1,5 +1,5 @@
 export type TipoPrazo = "RELATIVO_AO_INICIO" | "RELATIVO_A_CONCLUSAO_DE_TAREFA";
-export type StatusTarefa = "pendente" | "concluida" | "bloqueada";
+export type StatusTarefa = "pendente" | "concluida" | "bloqueada" | "cancelada";
 export type StatusServico = "em_andamento" | "concluido" | "cancelado";
 
 export interface TemplateTarefa {

@@ -502,7 +502,7 @@ export type Database = {
     Enums: {
       processo_status: "ativo" | "concluido" | "cancelado" | "suspenso"
       status_servico: "em_andamento" | "concluido" | "cancelado"
-      status_tarefa: "pendente" | "concluida" | "bloqueada"
+      status_tarefa: "pendente" | "concluida" | "bloqueada" | "cancelada"
       tipo_prazo: "RELATIVO_AO_INICIO" | "RELATIVO_A_CONCLUSAO_DE_TAREFA"
     }
     CompositeTypes: {
@@ -633,7 +633,7 @@ export const Constants = {
     Enums: {
       processo_status: ["ativo", "concluido", "cancelado", "suspenso"],
       status_servico: ["em_andamento", "concluido", "cancelado"],
-      status_tarefa: ["pendente", "concluida", "bloqueada"],
+      status_tarefa: ["pendente", "concluida", "bloqueada", "cancelada"],
       tipo_prazo: ["RELATIVO_AO_INICIO", "RELATIVO_A_CONCLUSAO_DE_TAREFA"],
     },
   },

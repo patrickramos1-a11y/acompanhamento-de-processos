@@ -7,6 +7,7 @@ import {
   concluirTarefa,
   reabrirTarefa,
   extendTarefaDias,
+  cancelarTarefa,
 } from "@/lib/servicos.functions";
 import { AppHeader } from "@/components/app-header";
 import { CronogramaServico } from "@/components/cronograma-servico";
@@ -57,6 +58,10 @@ function ServicoDetail() {
   };
   const handleExtend = async (tarefaId: string, dias: number) => {
     await extendTarefaDias({ data: { servico_id: id, tarefa_id: tarefaId, dias_extras: dias } });
+    router.invalidate();
+  };
+  const handleCancelar = async (tarefaId: string) => {
+    await cancelarTarefa({ data: { servico_id: id, tarefa_id: tarefaId } });
     router.invalidate();
   };
 
@@ -125,6 +130,7 @@ function ServicoDetail() {
           onConcluir={handleConcluir}
           onReabrir={handleReabrir}
           onExtend={handleExtend}
+          onCancelar={handleCancelar}
         />
       </main>
     </div>

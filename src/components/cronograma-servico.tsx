@@ -1,7 +1,18 @@
 import { useMemo, useState } from "react";
-import { Check, AlertTriangle, Clock, Lock, RotateCcw, CalendarPlus } from "lucide-react";
+import { Check, AlertTriangle, Clock, Lock, RotateCcw, CalendarPlus, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import {
   Popover,
   PopoverContent,
@@ -16,11 +27,13 @@ export function CronogramaServico({
   onConcluir,
   onReabrir,
   onExtend,
+  onCancelar,
 }: {
   servico: Servico;
   onConcluir: (tarefaId: string) => void;
   onReabrir: (tarefaId: string) => void;
   onExtend: (tarefaId: string, dias: number) => void;
+  onCancelar: (tarefaId: string) => void;
 }) {
   const progresso = calcularProgresso(servico);
 
@@ -65,6 +78,7 @@ export function CronogramaServico({
                 onConcluir={() => onConcluir(t.id)}
                 onReabrir={() => onReabrir(t.id)}
                 onExtend={(dias) => onExtend(t.id, dias)}
+                onCancelar={() => onCancelar(t.id)}
               />
             ))}
           </div>
@@ -83,11 +97,13 @@ function TarefaRow({
   onConcluir,
   onReabrir,
   onExtend,
+  onCancelar,
 }: {
   t: ServicoTarefa;
   onConcluir: () => void;
   onReabrir: () => void;
   onExtend: (dias: number) => void;
+  onCancelar: () => void;
 }) {
   const isLate = tarefaAtrasada(t);
   const [dias, setDias] = useState(1);
@@ -95,7 +111,9 @@ function TarefaRow({
   return (
     <div
       className={`flex flex-col gap-2 rounded-lg border px-3 py-2.5 text-sm sm:flex-row sm:items-center sm:gap-3 ${
-        t.status === "concluida"
+        t.status === "cancelada"
+          ? "border-muted bg-muted/40 opacity-75"
+          : t.status === "concluida"
           ? "border-success/30 bg-success/5"
           : isLate
             ? "border-destructive/30 bg-destructive/5"
@@ -110,9 +128,18 @@ function TarefaRow({
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className={`break-words font-medium ${t.status === "concluida" ? "line-through opacity-60" : ""}`}>
+            <span
+              className={`break-words font-medium ${
+                t.status === "concluida" || t.status === "cancelada" ? "line-through opacity-60" : ""
+              }`}
+            >
               {t.titulo}
             </span>
+            {t.status === "cancelada" && (
+              <Badge variant="outline" className="border-muted-foreground/40 text-[10px] text-muted-foreground">
+                cancelada
+              </Badge>
+            )}
             {t.impacta_prazo && (
               <Badge variant="outline" className="border-warning/40 text-[10px] text-warning-foreground">
                 impacta prazo
@@ -129,6 +156,28 @@ function TarefaRow({
         </div>
       </div>
       <div className="flex shrink-0 flex-wrap items-center justify-end gap-1 sm:justify-start">
+        {(t.status === "pendente" || t.status === "bloqueada") && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button size="sm" variant="ghost" title="Cancelar atividade" className="h-8 gap-1 text-destructive hover:text-destructive">
+                <XCircle className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Cancelar</span>
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Cancelar atividade?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Esta atividade e todas as tarefas que dependem dela serao canceladas. Elas nao poderao mais ser concluidas.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Voltar</AlertDialogCancel>
+                <AlertDialogAction onClick={onCancelar}>Cancelar atividade</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
         {t.status === "pendente" && (
           <>
             <Popover>
@@ -168,6 +217,7 @@ function TarefaRow({
 }
 
 function TaskIcon({ status, isLate }: { status: string; isLate: boolean }) {
+  if (status === "cancelada") return <XCircle className="h-4 w-4 text-muted-foreground" />;
   if (status === "concluida") return <Check className="h-4 w-4 text-success" />;
   if (status === "bloqueada") return <Lock className="h-4 w-4 text-muted-foreground" />;
   if (isLate) return <AlertTriangle className="h-4 w-4 text-destructive" />;

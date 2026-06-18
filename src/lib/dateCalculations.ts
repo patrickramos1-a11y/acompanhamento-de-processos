@@ -35,10 +35,13 @@ export function recalcularServico(servico: Servico): Servico {
   const tarefas = servico.tarefas.map((t) => ({ ...t }));
 
   for (const t of tarefas) {
-    if (t.status === "concluida") continue;
+    if (t.status === "concluida" || t.status === "cancelada") continue;
     if (t.depende_de_servico_tarefa_id) {
       const pai = tarefas.find((x) => x.id === t.depende_de_servico_tarefa_id);
-      if (pai && pai.status !== "concluida") {
+      if (pai?.status === "cancelada") {
+        t.status = "cancelada";
+        t.data_conclusao = null;
+      } else if (pai && pai.status !== "concluida") {
         t.status = "bloqueada";
       } else if (pai && pai.status === "concluida" && t.status === "bloqueada") {
         t.status = "pendente";
@@ -54,12 +57,15 @@ export function recalcularServico(servico: Servico): Servico {
 
   const datas: Date[] = [parseISO(servico.data_prevista_base)];
   for (const t of tarefas) {
-    if (t.impacta_prazo && t.data_prevista) datas.push(parseISO(t.data_prevista));
+    if (t.status !== "cancelada" && t.impacta_prazo && t.data_prevista) {
+      datas.push(parseISO(t.data_prevista));
+    }
   }
   const dataPrevistaAtual = max(datas);
 
   const visible = tarefas.filter((t) => !(t.gerar_apos_conclusao && t.status === "bloqueada"));
-  const allDone = visible.length > 0 && visible.every((t) => t.status === "concluida");
+  const allDone =
+    visible.length > 0 && visible.every((t) => t.status === "concluida" || t.status === "cancelada");
 
   return {
     ...servico,
@@ -72,7 +78,7 @@ export function recalcularServico(servico: Servico): Servico {
 export function calcularProgresso(servico: Servico): number {
   const visible = servico.tarefas.filter((t) => !(t.gerar_apos_conclusao && t.status === "bloqueada"));
   if (visible.length === 0) return 0;
-  const done = visible.filter((t) => t.status === "concluida").length;
+  const done = visible.filter((t) => t.status === "concluida" || t.status === "cancelada").length;
   return Math.round((done / visible.length) * 100);
 }
 

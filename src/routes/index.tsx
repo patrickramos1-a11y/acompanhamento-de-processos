@@ -8,6 +8,7 @@ import {
   criarServicoFromTemplate,
   concluirTarefa,
   reabrirTarefa,
+  cancelarTarefa,
 } from "@/lib/servicos.functions";
 import { useEffect, useMemo, useState } from "react";
 import { format, parseISO, differenceInDays } from "date-fns";
@@ -19,6 +20,17 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { MultiSelect } from "@/components/multi-select";
 import { AppHeader } from "@/components/app-header";
 
@@ -35,6 +47,7 @@ import {
   ListPlus,
   Loader2,
   ExternalLink,
+  XCircle,
 } from "lucide-react";
 
 
@@ -1516,6 +1529,7 @@ function ServicosDoProcesso({ processoId, embedded = false }: { processoId: stri
 
   const concluirFn = useServerFn(concluirTarefa);
   const reabrirFn = useServerFn(reabrirTarefa);
+  const cancelarFn = useServerFn(cancelarTarefa);
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ["servicos-por-processo", processoId] });
@@ -1530,6 +1544,11 @@ function ServicosDoProcesso({ processoId, embedded = false }: { processoId: stri
   const reabrirMut = useMutation({
     mutationFn: (vars: { servico_id: string; tarefa_id: string }) =>
       reabrirFn({ data: vars }),
+    onSuccess: invalidate,
+  });
+  const cancelarMut = useMutation({
+    mutationFn: (vars: { servico_id: string; tarefa_id: string }) =>
+      cancelarFn({ data: vars }),
     onSuccess: invalidate,
   });
 
@@ -1554,7 +1573,7 @@ function ServicosDoProcesso({ processoId, embedded = false }: { processoId: stri
         <div className={`${embedded ? "max-h-[420px] overflow-auto pr-1" : "px-4 pb-4 sm:px-6"} space-y-3`}>
           {servicos.map((s) => {
             const total = s.tarefas.length;
-            const feitas = s.tarefas.filter((t) => t.status === "concluida").length;
+            const feitas = s.tarefas.filter((t) => t.status === "concluida" || t.status === "cancelada").length;
             const pct = total > 0 ? Math.round((feitas / total) * 100) : 0;
             return (
               <div key={s.id} className="rounded-lg border border-border bg-card">
@@ -1580,14 +1599,16 @@ function ServicosDoProcesso({ processoId, embedded = false }: { processoId: stri
                   {s.tarefas.map((t) => {
                     const concluida = t.status === "concluida";
                     const bloqueada = t.status === "bloqueada";
+                    const cancelada = t.status === "cancelada";
                     const busy =
                       (concluirMut.isPending && concluirMut.variables?.tarefa_id === t.id) ||
-                      (reabrirMut.isPending && reabrirMut.variables?.tarefa_id === t.id);
+                      (reabrirMut.isPending && reabrirMut.variables?.tarefa_id === t.id) ||
+                      (cancelarMut.isPending && cancelarMut.variables?.tarefa_id === t.id);
                     return (
                       <li key={t.id} className="flex items-start gap-2 px-3 py-2">
                         <button
                           type="button"
-                          disabled={bloqueada || busy}
+                          disabled={bloqueada || cancelada || busy}
                           onClick={() => {
                             if (concluida) {
                               reabrirMut.mutate({ servico_id: s.id, tarefa_id: t.id });
@@ -1598,14 +1619,16 @@ function ServicosDoProcesso({ processoId, embedded = false }: { processoId: stri
                           className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border ${
                             concluida
                               ? "border-success bg-success text-success-foreground"
-                              : bloqueada
+                              : bloqueada || cancelada
                                 ? "border-border bg-muted text-muted-foreground cursor-not-allowed"
                                 : "border-border bg-background hover:border-primary"
                           } disabled:opacity-60`}
                           title={
                             bloqueada
                               ? "Bloqueada: aguarda dependência"
-                              : concluida
+                              : cancelada
+                                ? "Tarefa cancelada"
+                                : concluida
                                 ? "Reabrir tarefa"
                                 : "Concluir tarefa"
                           }
@@ -1619,7 +1642,7 @@ function ServicosDoProcesso({ processoId, embedded = false }: { processoId: stri
                         <div className="min-w-0 flex-1">
                           <div
                             className={`text-xs ${
-                              concluida ? "text-muted-foreground line-through" : "text-card-foreground"
+                              concluida || cancelada ? "text-muted-foreground line-through" : "text-card-foreground"
                             }`}
                           >
                             {t.titulo}
