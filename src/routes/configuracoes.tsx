@@ -64,7 +64,10 @@ function ConfiguracoesPage() {
       toast.success(
         `Importação concluída: ${res.processosCriados} criado(s), ${res.processosAtualizados} atualizado(s)`,
       );
-      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["dashboard"], refetchType: "active" }),
+        queryClient.invalidateQueries({ queryKey: ["servicos-data"], refetchType: "active" }),
+      ]);
     } catch (e: any) {
       console.error("Erro na importação:", e);
       const msg = e?.message ?? "Falha na importação";
@@ -102,7 +105,10 @@ function ConfiguracoesPage() {
       toast.success(
         `Acompanhamentos: ${res.tramitacoesCriadas} criado(s), ${res.tramitacoesIgnoradas} ignorado(s)`,
       );
-      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["dashboard"], refetchType: "active" }),
+        queryClient.invalidateQueries({ queryKey: ["servicos-data"], refetchType: "active" }),
+      ]);
     } catch (e: any) {
       console.error("Erro na importação de acompanhamentos:", e);
       const msg = e?.message ?? "Falha na importação";

@@ -164,7 +164,7 @@ function ServicosPage() {
     });
 
   const refresh = async () => {
-    await queryClient.invalidateQueries({ queryKey: ["servicos-data"] });
+    await queryClient.invalidateQueries({ queryKey: ["servicos-data"], refetchType: "active" });
     await router.invalidate({ sync: true });
   };
 

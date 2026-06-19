@@ -86,8 +86,8 @@ function TemplatesPage() {
   const [editId, setEditId] = useState<string | null>(null);
 
   const refresh = async () => {
-    await queryClient.invalidateQueries({ queryKey: ["servicos-data"] });
-    router.invalidate();
+    await queryClient.invalidateQueries({ queryKey: ["servicos-data"], refetchType: "active" });
+    await router.invalidate({ sync: true });
   };
 
   const handleCreate = async () => {
@@ -252,7 +252,7 @@ function TemplateEditor({
 }: {
   template: Template;
   onClose: () => void;
-  onChanged: () => void;
+  onChanged: () => Promise<void>;
 }) {
   const [meta, setMeta] = useState({
     nome: template.nome,
@@ -279,7 +279,7 @@ function TemplateEditor({
   const saveMeta = async () => {
     await updateTemplateMeta({ data: { id: template.id, ...meta } });
     toast.success("Template atualizado");
-    onChanged();
+    await onChanged();
   };
 
   const addFase = async () => {
@@ -290,13 +290,13 @@ function TemplateEditor({
     setNovaFase("");
     setAddingFase(false);
     toast.success("Fase adicionada");
-    onChanged();
+    await onChanged();
   };
 
   const removeFase = async (id: string) => {
     await deleteTemplateFase({ data: { id } });
     toast.success("Fase removida");
-    onChanged();
+    await onChanged();
   };
 
   const startEditFase = (fase: { id: string; nome: string; ordem: number }) => {
@@ -311,7 +311,7 @@ function TemplateEditor({
     });
     setEditingFaseId(null);
     toast.success("Fase atualizada");
-    onChanged();
+    await onChanged();
   };
 
   const addTarefa = async (faseId: string) => {
@@ -326,7 +326,7 @@ function TemplateEditor({
     setTaskForm(defaultTaskForm);
     setAddingTarefa(null);
     toast.success("Tarefa adicionada");
-    onChanged();
+    await onChanged();
   };
 
   const startEditTarefa = (tarefa: TemplateTarefa) => {
@@ -352,13 +352,13 @@ function TemplateEditor({
     });
     setEditingTarefaId(null);
     toast.success("Tarefa atualizada");
-    onChanged();
+    await onChanged();
   };
 
   const removeTarefa = async (id: string) => {
     await deleteTemplateTarefa({ data: { id } });
     toast.success("Tarefa removida");
-    onChanged();
+    await onChanged();
   };
 
   const allTarefas = template.fases.flatMap((f) => f.tarefas);

@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { useSuspenseQuery, queryOptions } from "@tanstack/react-query";
+import { useSuspenseQuery, queryOptions, useQueryClient } from "@tanstack/react-query";
 import { parseISO } from "date-fns";
 import { ArrowLeft, Building2, Calendar, ClipboardList, Target } from "lucide-react";
 import {
@@ -38,6 +38,7 @@ export const Route = createFileRoute("/servicos/$id")({
 function ServicoDetail() {
   const { id } = Route.useParams();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { data } = useSuspenseQuery(servicoQuery(id));
   const { servico, empresa } = data;
 
@@ -48,21 +49,29 @@ function ServicoDetail() {
       (1000 * 60 * 60 * 24),
   );
 
+  const refresh = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["servico", id], refetchType: "active" }),
+      queryClient.invalidateQueries({ queryKey: ["servicos-data"], refetchType: "active" }),
+    ]);
+    await router.invalidate({ sync: true });
+  };
+
   const handleConcluir = async (tarefaId: string) => {
     await concluirTarefa({ data: { servico_id: id, tarefa_id: tarefaId } });
-    router.invalidate();
+    await refresh();
   };
   const handleReabrir = async (tarefaId: string) => {
     await reabrirTarefa({ data: { servico_id: id, tarefa_id: tarefaId } });
-    router.invalidate();
+    await refresh();
   };
   const handleExtend = async (tarefaId: string, dias: number) => {
     await extendTarefaDias({ data: { servico_id: id, tarefa_id: tarefaId, dias_extras: dias } });
-    router.invalidate();
+    await refresh();
   };
   const handleCancelar = async (tarefaId: string) => {
     await cancelarTarefa({ data: { servico_id: id, tarefa_id: tarefaId } });
-    router.invalidate();
+    await refresh();
   };
 
   return (

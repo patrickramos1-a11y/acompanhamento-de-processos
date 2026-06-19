@@ -1374,8 +1374,11 @@ function CriarTarefaModal({
     onSuccess: async (result) => {
       setTemplateId("");
       setCreatedServicoId(result.id);
-      await queryClient.invalidateQueries({ queryKey: ["servicos-data"] });
-      await queryClient.invalidateQueries({ queryKey: ["servicos-por-processo", processo?.id] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["servicos-data"], refetchType: "active" }),
+        queryClient.invalidateQueries({ queryKey: ["servicos-por-processo", processo?.id], refetchType: "active" }),
+        queryClient.invalidateQueries({ queryKey: ["dashboard"], refetchType: "active" }),
+      ]);
     },
   });
 
@@ -1531,9 +1534,12 @@ function ServicosDoProcesso({ processoId, embedded = false }: { processoId: stri
   const reabrirFn = useServerFn(reabrirTarefa);
   const cancelarFn = useServerFn(cancelarTarefa);
 
-  const invalidate = () => {
-    queryClient.invalidateQueries({ queryKey: ["servicos-por-processo", processoId] });
-    queryClient.invalidateQueries({ queryKey: ["servicos-data"] });
+  const invalidate = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["servicos-por-processo", processoId], refetchType: "active" }),
+      queryClient.invalidateQueries({ queryKey: ["servicos-data"], refetchType: "active" }),
+      queryClient.invalidateQueries({ queryKey: ["dashboard"], refetchType: "active" }),
+    ]);
   };
 
   const concluirMut = useMutation({
