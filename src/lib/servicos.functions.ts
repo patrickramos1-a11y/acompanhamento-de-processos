@@ -5,22 +5,32 @@ import { addDays, parseISO } from "date-fns";
 import { recalcularServico, toISODate } from "@/lib/dateCalculations";
 import type { Template, TemplateFase, TemplateTarefa, Servico, ServicoTarefa, TipoPrazo } from "@/types/servicos";
 
+const CANCELLED_TASK_DATE = "1900-01-01";
+
 function toAppTaskStatus(tarefa: {
   status: string;
   data_conclusao: string | null;
   impacta_prazo: boolean;
 }) {
-  if (tarefa.status === "concluida" && tarefa.data_conclusao === null && tarefa.impacta_prazo === false) {
+  if (
+    tarefa.status === "concluida" &&
+    tarefa.impacta_prazo === false &&
+    (tarefa.data_conclusao === CANCELLED_TASK_DATE || tarefa.data_conclusao === null)
+  ) {
     return "cancelada" as const;
   }
   return tarefa.status as ServicoTarefa["status"];
+}
+
+function toAppCompletionDate(tarefa: { data_conclusao: string | null }) {
+  return tarefa.data_conclusao === CANCELLED_TASK_DATE ? null : tarefa.data_conclusao;
 }
 
 function toDbTaskPatch(tarefa: ServicoTarefa) {
   if (tarefa.status === "cancelada") {
     return {
       status: "concluida" as const,
-      data_conclusao: null,
+      data_conclusao: CANCELLED_TASK_DATE,
       impacta_prazo: false,
       data_prevista: tarefa.data_prevista,
     };
@@ -102,7 +112,7 @@ export const getServicosData = createServerFn({ method: "GET" }).handler(async (
         gerar_apos_conclusao: st.gerar_apos_conclusao,
         status: toAppTaskStatus(st),
         data_prevista: st.data_prevista,
-        data_conclusao: st.data_conclusao,
+        data_conclusao: toAppCompletionDate(st),
         template_tarefa_id: st.template_tarefa_id,
         ordem: st.ordem,
       })),
@@ -154,7 +164,7 @@ export const getServicosByProcesso = createServerFn({ method: "GET" })
           gerar_apos_conclusao: t.gerar_apos_conclusao,
           status: toAppTaskStatus(t),
           data_prevista: t.data_prevista,
-          data_conclusao: t.data_conclusao,
+          data_conclusao: toAppCompletionDate(t),
           template_tarefa_id: t.template_tarefa_id,
           ordem: t.ordem,
         })),
@@ -176,7 +186,12 @@ export const getServicoById = createServerFn({ method: "GET" })
     return {
       servico: {
         ...srv,
-        tarefas: (tarefas ?? []).map((t) => ({ ...t, tipo_prazo: t.tipo_prazo as TipoPrazo })),
+        tarefas: (tarefas ?? []).map((t) => ({
+          ...t,
+          tipo_prazo: t.tipo_prazo as TipoPrazo,
+          status: toAppTaskStatus(t),
+          data_conclusao: toAppCompletionDate(t),
+        })),
       } as Servico,
       empresa: empresa ?? null,
     };
@@ -460,7 +475,7 @@ export const cancelarTarefa = createServerFn({ method: "POST" })
 
     const { error: updateError } = await supabaseAdmin
       .from("servico_tarefas")
-      .update({ status: "concluida", data_conclusao: null, impacta_prazo: false })
+      .update({ status: "concluida", data_conclusao: CANCELLED_TASK_DATE, impacta_prazo: false })
       .in("id", ids);
     if (updateError) throw new Error(updateError.message);
 
@@ -554,7 +569,7 @@ async function recalcAndPersist(servicoId: string) {
       gerar_apos_conclusao: t.gerar_apos_conclusao,
       status: toAppTaskStatus(t),
       data_prevista: t.data_prevista,
-      data_conclusao: t.data_conclusao,
+      data_conclusao: toAppCompletionDate(t),
       template_tarefa_id: t.template_tarefa_id,
       ordem: t.ordem,
     })),
