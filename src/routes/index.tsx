@@ -779,10 +779,10 @@ function KPI({
   total?: number;
 }) {
   const toneClass = {
-    default: "bg-gradient-to-br from-primary to-primary-glow text-primary-foreground",
-    info: "bg-info/15 text-info",
-    success: "bg-success/15 text-success",
-    warning: "bg-warning/20 text-warning-foreground",
+    default: "bg-primary text-primary-foreground",
+    info: "bg-info/15 text-info border border-info/30",
+    success: "bg-success/18 text-success border border-success/35",
+    warning: "bg-warning/22 text-warning-foreground border border-warning/45",
   }[tone];
   const barColor = {
     default: "bg-gradient-to-r from-primary to-primary-glow",
@@ -831,15 +831,15 @@ function PillMetric({
 }) {
   const cls =
     tone === "info"
-      ? "bg-info/20 text-info border-info/50 shadow-[0_0_0_1px_hsl(var(--info)/0.1)]"
+      ? "bg-info/15 text-info border-info/45"
       : tone === "success"
-        ? "bg-success/20 text-success border-success/50 shadow-[0_0_0_1px_hsl(var(--success)/0.1)]"
+        ? "bg-success/15 text-success border-success/45"
         : tone === "warning"
-          ? "bg-warning/25 text-warning-foreground border-warning/60"
+          ? "bg-warning/20 text-warning-foreground border-warning/55"
           : tone === "destructive"
-            ? "bg-destructive/20 text-destructive border-destructive/50"
+            ? "bg-destructive/15 text-destructive border-destructive/45"
             : tone === "total"
-              ? "bg-gradient-to-br from-primary/15 to-primary/5 text-primary border-primary/40"
+              ? "bg-gradient-to-br from-primary/18 to-accent/10 text-primary border-primary/45"
               : "bg-secondary/70 text-foreground border-border";
   const dim = value === 0 ? "opacity-50" : "";
   return (

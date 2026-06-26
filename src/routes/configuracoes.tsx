@@ -129,14 +129,19 @@ function ConfiguracoesPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-sidebar text-sidebar-foreground">
+      <header className="relative overflow-hidden border-b border-sidebar-border bg-gradient-hero text-sidebar-foreground">
+        <div className="absolute inset-0 bg-mesh opacity-70" aria-hidden="true" />
+        <div className="absolute inset-x-0 top-0 h-1 bg-gradient-accent" aria-hidden="true" />
         <div className="mx-auto flex max-w-[1400px] flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-5 lg:px-8">
-          <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground">
+          <div className="relative flex min-w-0 items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-sidebar-primary/35 bg-sidebar-primary text-sidebar-primary-foreground shadow-accent-glow">
               <Settings className="h-5 w-5" />
             </div>
             <div className="min-w-0">
-              <h1 className="truncate text-base font-semibold tracking-tight sm:text-lg">Configurações</h1>
+              <p className="truncate text-[10px] font-medium uppercase tracking-[0.18em] text-sidebar-primary">
+                Ramos Engenharia
+              </p>
+              <h1 className="truncate font-display text-base font-semibold sm:text-lg">Configurações</h1>
               <p className="truncate text-xs text-sidebar-foreground/70">
                 Importação de dados e ajustes da plataforma
               </p>
@@ -144,7 +149,7 @@ function ConfiguracoesPage() {
           </div>
           <Link
             to="/"
-            className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-sidebar-foreground/20 px-3 py-1.5 text-sm text-sidebar-foreground hover:bg-sidebar-foreground/10 sm:w-auto"
+            className="relative inline-flex w-full items-center justify-center gap-2 rounded-lg border border-sidebar-foreground/15 bg-white/10 px-3 py-1.5 text-sm text-sidebar-foreground shadow-sm transition-colors hover:border-sidebar-primary/45 hover:bg-sidebar-primary/15 sm:w-auto"
           >
             <ArrowLeft className="h-4 w-4" />
             Voltar ao painel
@@ -153,16 +158,19 @@ function ConfiguracoesPage() {
       </header>
 
       <main className="mx-auto max-w-[1100px] space-y-6 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
-        <section className="rounded-lg border border-border bg-card p-6">
-          <div className="flex items-start gap-4">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+        <section
+          className="surface-elevated w-full overflow-hidden rounded-xl p-5 sm:p-6"
+          style={{ maxWidth: "calc(100vw - 2rem)" }}
+        >
+          <div className="flex flex-col items-start gap-3 sm:flex-row sm:gap-4">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary shadow-sm">
               <FileSpreadsheet className="h-5 w-5" />
             </div>
-            <div className="flex-1">
-              <h2 className="text-base font-semibold text-card-foreground">
+            <div className="min-w-0 flex-1">
+              <h2 className="break-words [overflow-wrap:anywhere] text-base font-semibold text-card-foreground">
                 Importar processos a partir de planilha
               </h2>
-              <p className="mt-1 text-sm text-muted-foreground">
+              <p className="mt-1 break-words [overflow-wrap:anywhere] text-sm text-muted-foreground">
                 Envie um arquivo <code className="rounded bg-muted px-1">.xlsx</code> com as
                 colunas: <strong>Empresa</strong>, <strong>Grupo Empresarial</strong>,{" "}
                 <strong>Tipo de Processo</strong>, <strong>Nome</strong>,{" "}
@@ -170,7 +178,7 @@ function ConfiguracoesPage() {
                 <strong>Status</strong> e <strong>Responsável</strong>. Empresas, grupos e
                 tipos serão criados automaticamente quando não existirem.
               </p>
-              <p className="mt-2 text-xs text-muted-foreground">
+              <p className="mt-2 break-words [overflow-wrap:anywhere] text-xs text-muted-foreground">
                 Processos com status <em>"Em análise pela Ramos"</em> são convertidos
                 automaticamente para <em>"Em análise pelo órgão"</em>.
               </p>
@@ -197,7 +205,7 @@ function ConfiguracoesPage() {
                   )}
                   {loading ? "Importando..." : "Importar processos"}
                 </button>
-                <span className="text-sm text-muted-foreground">
+                <span className="min-w-[220px] flex-1 break-words text-sm text-muted-foreground">
                   Clique no botão para escolher a planilha e iniciar a importação automaticamente.
                 </span>
               </div>
@@ -246,16 +254,19 @@ function ConfiguracoesPage() {
           )}
         </section>
 
-        <section className="rounded-lg border border-border bg-card p-6">
-          <div className="flex items-start gap-4">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+        <section
+          className="surface-elevated w-full overflow-hidden rounded-xl p-5 sm:p-6"
+          style={{ maxWidth: "calc(100vw - 2rem)" }}
+        >
+          <div className="flex flex-col items-start gap-3 sm:flex-row sm:gap-4">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-info/15 text-info shadow-sm">
               <ListChecks className="h-5 w-5" />
             </div>
-            <div className="flex-1">
-              <h2 className="text-base font-semibold text-card-foreground">
+            <div className="min-w-0 flex-1">
+              <h2 className="break-words [overflow-wrap:anywhere] text-base font-semibold text-card-foreground">
                 Importar acompanhamentos de processos
               </h2>
-              <p className="mt-1 text-sm text-muted-foreground">
+              <p className="mt-1 break-words [overflow-wrap:anywhere] text-sm text-muted-foreground">
                 Envie um arquivo <code className="rounded bg-muted px-1">.xlsx</code> com as
                 colunas: <strong>Empresa</strong>, <strong>Tipo de processo</strong>,{" "}
                 <strong>Nº do processo</strong>, <strong>Status</strong>,{" "}
@@ -263,7 +274,7 @@ function ConfiguracoesPage() {
                 <strong>Responsável</strong>. Cada linha será vinculada automaticamente ao
                 processo já cadastrado pelo nome da empresa + nº do processo.
               </p>
-              <p className="mt-2 text-xs text-muted-foreground">
+              <p className="mt-2 break-words [overflow-wrap:anywhere] text-xs text-muted-foreground">
                 Importe primeiro os processos. Linhas sem processo correspondente são
                 listadas como pendência (nada é criado em branco).
               </p>
@@ -289,7 +300,7 @@ function ConfiguracoesPage() {
                   )}
                   {loadingAcomp ? "Importando..." : "Importar acompanhamentos"}
                 </button>
-                <span className="text-sm text-muted-foreground">
+                <span className="min-w-[220px] flex-1 break-words text-sm text-muted-foreground">
                   Clique no botão para escolher a planilha de acompanhamentos.
                 </span>
               </div>
@@ -356,7 +367,7 @@ function Stat({
         ? "text-info"
         : "text-card-foreground";
   return (
-    <div className="rounded-md border border-border bg-background p-3">
+    <div className="rounded-lg border border-border bg-card p-3 shadow-sm">
       <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
       <div className={`mt-1 text-2xl font-semibold tabular-nums ${cls}`}>{value}</div>
     </div>

@@ -496,10 +496,10 @@ function Kpi({
   tone: "default" | "info" | "success" | "warning";
 }) {
   const cls = {
-    default: "bg-gradient-to-br from-primary to-primary-glow text-primary-foreground",
-    info: "bg-info/15 text-info",
-    success: "bg-success/15 text-success",
-    warning: "bg-warning/20 text-warning-foreground",
+    default: "bg-primary text-primary-foreground",
+    info: "bg-info/15 text-info border border-info/30",
+    success: "bg-success/18 text-success border border-success/35",
+    warning: "bg-warning/22 text-warning-foreground border border-warning/45",
   }[tone];
   return (
     <div className="surface-elevated rounded-2xl p-5">
