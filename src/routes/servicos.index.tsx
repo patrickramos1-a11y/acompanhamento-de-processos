@@ -90,23 +90,29 @@ function ServicosPage() {
   const { data } = useSuspenseQuery(servicosDataQuery);
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { empresas, templates, servicos } = data;
+  const { empresas, processos, templates, servicos } = data;
 
   const now = new Date();
   const [filterMonth, setFilterMonth] = useState(now.getMonth());
   const [filterYear, setFilterYear] = useState(now.getFullYear());
   const [filterEmpresas, setFilterEmpresas] = useState<string[]>([]);
   const [filterStatus, setFilterStatus] = useState<string[]>([]);
+  const [filterTemplates, setFilterTemplates] = useState<string[]>([]);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   const [createOpen, setCreateOpen] = useState(false);
   const [novoForm, setNovoForm] = useState({
     empresa_id: "",
+    processo_id: "",
     template_id: "",
     data_inicial: toISODate(new Date()),
   });
 
   const empresaMap = useMemo(() => new Map(empresas.map((e) => [e.id, e])), [empresas]);
+  const processosDaEmpresa = useMemo(
+    () => processos.filter((p) => p.empresa_id === novoForm.empresa_id),
+    [processos, novoForm.empresa_id],
+  );
 
   const visivelNoMes = (s: typeof servicos[number]) => {
     const inicio = parseISO(s.data_inicial);
@@ -125,6 +131,7 @@ function ServicosPage() {
       .filter((s) => {
         if (!s._vis.visible) return false;
         if (filterEmpresas.length && !filterEmpresas.includes(s.empresa_id)) return false;
+        if (filterTemplates.length && (!s.template_id || !filterTemplates.includes(s.template_id))) return false;
         if (filterStatus.length) {
           const atrasado = s._vis.atrasado || (s.status !== "concluido" && parseISO(s.data_prevista_atual) < now);
           const ok =
@@ -135,7 +142,7 @@ function ServicosPage() {
         }
         return true;
       });
-  }, [servicos, filterMonth, filterYear, filterEmpresas, filterStatus]);
+  }, [servicos, filterMonth, filterYear, filterEmpresas, filterTemplates, filterStatus]);
 
   const anos = useMemo(() => {
     const s = new Set<number>([now.getFullYear()]);
@@ -170,9 +177,14 @@ function ServicosPage() {
 
   const handleCriar = async () => {
     if (!novoForm.empresa_id || !novoForm.template_id || !novoForm.data_inicial) return;
-    const r = await criarServicoFromTemplate({ data: novoForm });
+    const r = await criarServicoFromTemplate({
+      data: {
+        ...novoForm,
+        processo_id: novoForm.processo_id || null,
+      },
+    });
     setCreateOpen(false);
-    setNovoForm({ empresa_id: "", template_id: "", data_inicial: toISODate(new Date()) });
+    setNovoForm({ empresa_id: "", processo_id: "", template_id: "", data_inicial: toISODate(new Date()) });
     toast.success("Serviço criado!");
     await refresh();
     setExpanded((p) => new Set(p).add(r.id));
@@ -250,6 +262,12 @@ function ServicosPage() {
             onChange={setFilterEmpresas}
           />
           <MultiSelect
+            label="ServiÃ§o/Template"
+            options={templates.map((t) => ({ value: t.id, label: t.nome }))}
+            selected={filterTemplates}
+            onChange={setFilterTemplates}
+          />
+          <MultiSelect
             label="Status do Serviço"
             options={[
               { value: "em_andamento", label: "Em andamento" },
@@ -272,7 +290,7 @@ function ServicosPage() {
               <div className="space-y-4">
                 <div>
                   <Label>Empresa *</Label>
-                  <Select value={novoForm.empresa_id} onValueChange={(v) => setNovoForm({ ...novoForm, empresa_id: v })}>
+                  <Select value={novoForm.empresa_id} onValueChange={(v) => setNovoForm({ ...novoForm, empresa_id: v, processo_id: "" })}>
                     <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                     <SelectContent>
                       {empresas.map((e) => (
@@ -283,6 +301,22 @@ function ServicosPage() {
                     </SelectContent>
                   </Select>
                 </div>
+                {novoForm.empresa_id && (
+                  <div>
+                    <Label>Processo vinculado</Label>
+                    <Select value={novoForm.processo_id || "none"} onValueChange={(v) => setNovoForm({ ...novoForm, processo_id: v === "none" ? "" : v })}>
+                      <SelectTrigger><SelectValue placeholder="Sem processo vinculado" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Sem processo vinculado</SelectItem>
+                        {processosDaEmpresa.map((p) => (
+                          <SelectItem key={p.id} value={p.id}>
+                            {p.nome}{p.numero_protocolo ? ` Â· ${p.numero_protocolo}` : ""}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
                 <div>
                   <Label>Template *</Label>
                   <Select value={novoForm.template_id} onValueChange={(v) => setNovoForm({ ...novoForm, template_id: v })}>

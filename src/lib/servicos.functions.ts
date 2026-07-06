@@ -3,7 +3,7 @@ import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { addDays, parseISO } from "date-fns";
 import { recalcularServico, toISODate } from "@/lib/dateCalculations";
-import type { Template, TemplateFase, TemplateTarefa, Servico, ServicoTarefa, TipoPrazo } from "@/types/servicos";
+import type { Template, TemplateFase, TemplateTarefa, Servico, ServicoTarefa, TipoPrazo, ProcessoResumo } from "@/types/servicos";
 
 const CANCELLED_TASK_DATE = "1900-01-01";
 
@@ -47,8 +47,9 @@ function toDbTaskPatch(tarefa: ServicoTarefa) {
 // ============================================================
 
 export const getServicosData = createServerFn({ method: "GET" }).handler(async () => {
-  const [empresasRes, templatesRes, fasesRes, ttarefasRes, servicosRes, starefasRes] = await Promise.all([
+  const [empresasRes, processosRes, templatesRes, fasesRes, ttarefasRes, servicosRes, starefasRes] = await Promise.all([
     supabaseAdmin.from("empresas").select("id, nome, cnpj").order("nome"),
+    supabaseAdmin.from("processos").select("id,nome,numero_protocolo,empresa_id,status").order("nome"),
     supabaseAdmin.from("templates").select("*").order("criado_em", { ascending: false }),
     supabaseAdmin.from("template_fases").select("*").order("ordem"),
     supabaseAdmin.from("template_tarefas").select("*").order("ordem"),
@@ -121,6 +122,7 @@ export const getServicosData = createServerFn({ method: "GET" }).handler(async (
 
   return {
     empresas: empresasRes.data ?? [],
+    processos: (processosRes.data ?? []) as ProcessoResumo[],
     templates,
     servicos,
   };

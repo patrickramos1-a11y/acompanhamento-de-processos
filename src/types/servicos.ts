@@ -60,3 +60,11 @@ export interface Servico {
   status: StatusServico;
   tarefas: ServicoTarefa[];
 }
+
+export interface ProcessoResumo {
+  id: string;
+  nome: string;
+  numero_protocolo: string | null;
+  empresa_id: string;
+  status: string;
+}

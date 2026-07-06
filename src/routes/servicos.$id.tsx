@@ -1,18 +1,41 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useSuspenseQuery, queryOptions, useQueryClient } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import { parseISO } from "date-fns";
-import { ArrowLeft, Building2, Calendar, ClipboardList, Target } from "lucide-react";
+import { ArrowLeft, Building2, Calendar, ClipboardList, Plus, Target } from "lucide-react";
 import {
   getServicoById,
   concluirTarefa,
   reabrirTarefa,
   extendTarefaDias,
   cancelarTarefa,
+  adicionarTarefaServico,
 } from "@/lib/servicos.functions";
 import { AppHeader } from "@/components/app-header";
 import { CronogramaServico } from "@/components/cronograma-servico";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { formatDate } from "@/lib/dateCalculations";
+import type { TipoPrazo } from "@/types/servicos";
 
 const servicoQuery = (id: string) =>
   queryOptions({
@@ -41,6 +64,24 @@ function ServicoDetail() {
   const queryClient = useQueryClient();
   const { data } = useSuspenseQuery(servicoQuery(id));
   const { servico, empresa } = data;
+  const [avulsaOpen, setAvulsaOpen] = useState(false);
+  const [avulsaForm, setAvulsaForm] = useState({
+    titulo: "",
+    fase_nome: "",
+    duracao_dias: 1,
+    tipo_prazo: "RELATIVO_AO_INICIO" as TipoPrazo,
+    impacta_prazo: true,
+    depende_de_servico_tarefa_id: "",
+  });
+
+  const fasesExistentes = useMemo(
+    () => Array.from(new Set(servico.tarefas.map((t) => t.fase_nome).filter(Boolean))).sort(),
+    [servico.tarefas],
+  );
+  const tarefasParaDependencia = useMemo(
+    () => servico.tarefas.filter((t) => t.status !== "cancelada"),
+    [servico.tarefas],
+  );
 
   const now = new Date();
   const atrasado = servico.status !== "concluido" && parseISO(servico.data_prevista_atual) < now;
@@ -71,6 +112,37 @@ function ServicoDetail() {
   };
   const handleCancelar = async (tarefaId: string) => {
     await cancelarTarefa({ data: { servico_id: id, tarefa_id: tarefaId } });
+    await refresh();
+  };
+  const handleCriarAvulsa = async () => {
+    const titulo = avulsaForm.titulo.trim();
+    const faseNome = avulsaForm.fase_nome.trim();
+    if (!titulo || !faseNome) return;
+    await adicionarTarefaServico({
+      data: {
+        servico_id: id,
+        titulo,
+        fase_nome: faseNome,
+        duracao_dias: avulsaForm.duracao_dias,
+        tipo_prazo: avulsaForm.tipo_prazo,
+        impacta_prazo: avulsaForm.impacta_prazo,
+        depende_de_servico_tarefa_id:
+          avulsaForm.tipo_prazo === "RELATIVO_A_CONCLUSAO_DE_TAREFA" && avulsaForm.depende_de_servico_tarefa_id
+            ? avulsaForm.depende_de_servico_tarefa_id
+            : null,
+        gerar_apos_conclusao: false,
+      },
+    });
+    setAvulsaOpen(false);
+    setAvulsaForm({
+      titulo: "",
+      fase_nome: "",
+      duracao_dias: 1,
+      tipo_prazo: "RELATIVO_AO_INICIO",
+      impacta_prazo: true,
+      depende_de_servico_tarefa_id: "",
+    });
+    toast.success("Tarefa avulsa criada");
     await refresh();
   };
 
@@ -132,6 +204,115 @@ function ServicoDetail() {
           {!atrasado && servico.status === "em_andamento" && (
             <Badge className="border border-info/30 bg-info/15 text-info">Em andamento</Badge>
           )}
+        </div>
+
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="font-display text-lg font-semibold text-foreground">Cronograma</h2>
+            <p className="text-sm text-muted-foreground">Tarefas do serviÃ§o ativo, incluindo demandas avulsas.</p>
+          </div>
+          <Dialog open={avulsaOpen} onOpenChange={setAvulsaOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2">
+                <Plus className="h-4 w-4" />
+                Nova tarefa avulsa
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="w-[calc(100vw-1rem)] max-w-xl sm:w-[calc(100vw-2rem)]">
+              <DialogHeader>
+                <DialogTitle>Nova tarefa avulsa</DialogTitle>
+                <DialogDescription>Adicione uma demanda apenas neste serviÃ§o, sem alterar o template.</DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4">
+                <div>
+                  <Label>TÃ­tulo *</Label>
+                  <Input value={avulsaForm.titulo} onChange={(e) => setAvulsaForm({ ...avulsaForm, titulo: e.target.value })} />
+                </div>
+                <div>
+                  <Label>Fase *</Label>
+                  <Input
+                    list="fases-servico"
+                    value={avulsaForm.fase_nome}
+                    onChange={(e) => setAvulsaForm({ ...avulsaForm, fase_nome: e.target.value })}
+                    placeholder="Ex.: Demanda avulsa"
+                  />
+                  <datalist id="fases-servico">
+                    {fasesExistentes.map((fase) => (
+                      <option key={fase} value={fase} />
+                    ))}
+                  </datalist>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <Label>DuraÃ§Ã£o (dias)</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={avulsaForm.duracao_dias}
+                      onChange={(e) => setAvulsaForm({ ...avulsaForm, duracao_dias: parseInt(e.target.value) || 0 })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Tipo de prazo</Label>
+                    <Select
+                      value={avulsaForm.tipo_prazo}
+                      onValueChange={(v) =>
+                        setAvulsaForm({
+                          ...avulsaForm,
+                          tipo_prazo: v as TipoPrazo,
+                          depende_de_servico_tarefa_id: v === "RELATIVO_AO_INICIO" ? "" : avulsaForm.depende_de_servico_tarefa_id,
+                        })
+                      }
+                    >
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="RELATIVO_AO_INICIO">Relativo ao inÃ­cio</SelectItem>
+                        <SelectItem value="RELATIVO_A_CONCLUSAO_DE_TAREFA">Relativo Ã  conclusÃ£o de tarefa</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                {avulsaForm.tipo_prazo === "RELATIVO_A_CONCLUSAO_DE_TAREFA" && (
+                  <div>
+                    <Label>Depende da tarefa</Label>
+                    <Select
+                      value={avulsaForm.depende_de_servico_tarefa_id}
+                      onValueChange={(v) => setAvulsaForm({ ...avulsaForm, depende_de_servico_tarefa_id: v })}
+                    >
+                      <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                      <SelectContent>
+                        {tarefasParaDependencia.map((t) => (
+                          <SelectItem key={t.id} value={t.id}>
+                            {t.titulo}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                <div className="flex items-center justify-between rounded-lg border border-border px-3 py-2">
+                  <div>
+                    <Label>Impacta prazo</Label>
+                    <p className="text-xs text-muted-foreground">Quando ativo, a previsÃ£o do serviÃ§o considera esta tarefa.</p>
+                  </div>
+                  <Switch
+                    checked={avulsaForm.impacta_prazo}
+                    onCheckedChange={(v) => setAvulsaForm({ ...avulsaForm, impacta_prazo: v })}
+                  />
+                </div>
+                <Button
+                  onClick={handleCriarAvulsa}
+                  disabled={
+                    !avulsaForm.titulo.trim() ||
+                    !avulsaForm.fase_nome.trim() ||
+                    (avulsaForm.tipo_prazo === "RELATIVO_A_CONCLUSAO_DE_TAREFA" && !avulsaForm.depende_de_servico_tarefa_id)
+                  }
+                >
+                  Criar tarefa avulsa
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
 
         <CronogramaServico
