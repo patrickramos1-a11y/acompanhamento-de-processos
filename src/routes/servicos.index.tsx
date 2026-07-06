@@ -6,6 +6,7 @@ import { parseISO } from "date-fns";
 import {
   getServicosData,
   criarServicoFromTemplate,
+  criarServicosFromTemplateBatch,
   deleteServico,
   concluirTarefa,
   reabrirTarefa,
@@ -101,9 +102,16 @@ function ServicosPage() {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   const [createOpen, setCreateOpen] = useState(false);
+  const [createMode, setCreateMode] = useState<"individual" | "lote">("individual");
+  const [creating, setCreating] = useState(false);
   const [novoForm, setNovoForm] = useState({
     empresa_id: "",
     processo_id: "",
+    template_id: "",
+    data_inicial: toISODate(new Date()),
+  });
+  const [loteForm, setLoteForm] = useState({
+    empresa_ids: [] as string[],
     template_id: "",
     data_inicial: toISODate(new Date()),
   });
@@ -177,17 +185,48 @@ function ServicosPage() {
 
   const handleCriar = async () => {
     if (!novoForm.empresa_id || !novoForm.template_id || !novoForm.data_inicial) return;
-    const r = await criarServicoFromTemplate({
-      data: {
-        ...novoForm,
-        processo_id: novoForm.processo_id || null,
-      },
-    });
-    setCreateOpen(false);
-    setNovoForm({ empresa_id: "", processo_id: "", template_id: "", data_inicial: toISODate(new Date()) });
-    toast.success("Serviço criado!");
-    await refresh();
-    setExpanded((p) => new Set(p).add(r.id));
+    setCreating(true);
+    try {
+      const r = await criarServicoFromTemplate({
+        data: {
+          ...novoForm,
+          processo_id: novoForm.processo_id || null,
+        },
+      });
+      setCreateOpen(false);
+      setNovoForm({ empresa_id: "", processo_id: "", template_id: "", data_inicial: toISODate(new Date()) });
+      toast.success("Servico criado!");
+      await refresh();
+      setExpanded((p) => new Set(p).add(r.id));
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const handleCriarLote = async () => {
+    if (!loteForm.empresa_ids.length || !loteForm.template_id || !loteForm.data_inicial) return;
+    setCreating(true);
+    try {
+      const r = await criarServicosFromTemplateBatch({
+        data: {
+          empresa_ids: loteForm.empresa_ids,
+          template_id: loteForm.template_id,
+          data_inicial: loteForm.data_inicial,
+          processo_id: null,
+        },
+      });
+      setCreateOpen(false);
+      setLoteForm({ empresa_ids: [], template_id: "", data_inicial: toISODate(new Date()) });
+      toast.success(`${r.ids.length} servico(s) criado(s)`);
+      await refresh();
+      setExpanded((p) => {
+        const next = new Set(p);
+        r.ids.forEach((id) => next.add(id));
+        return next;
+      });
+    } finally {
+      setCreating(false);
+    }
   };
 
   const handleConcluir = async (servico_id: string, tarefa_id: string) => {
@@ -278,7 +317,10 @@ function ServicosPage() {
             onChange={setFilterStatus}
           />
           <div className="hidden sm:ml-auto sm:block" />
-          <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+          <Dialog open={createOpen} onOpenChange={(open) => {
+            setCreateOpen(open);
+            if (open) setCreateMode("individual");
+          }}>
             <DialogTrigger asChild>
               <Button className="w-full gap-2 sm:w-auto"><Plus className="h-4 w-4" />Novo Serviço</Button>
             </DialogTrigger>
@@ -288,59 +330,123 @@ function ServicosPage() {
                 <DialogDescription>Vincule a uma empresa e a um template existente.</DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
-                <div>
-                  <Label>Empresa *</Label>
-                  <Select value={novoForm.empresa_id} onValueChange={(v) => setNovoForm({ ...novoForm, empresa_id: v, processo_id: "" })}>
-                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                    <SelectContent>
-                      {empresas.map((e) => (
-                        <SelectItem key={e.id} value={e.id}>
-                          {e.nome}{e.cnpj ? ` · ${e.cnpj}` : ""}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <div className="grid grid-cols-2 rounded-lg bg-muted p-1">
+                  <Button type="button" variant={createMode === "individual" ? "default" : "ghost"} size="sm" onClick={() => setCreateMode("individual")}>
+                    Individual
+                  </Button>
+                  <Button type="button" variant={createMode === "lote" ? "default" : "ghost"} size="sm" onClick={() => setCreateMode("lote")}>
+                    Em lote
+                  </Button>
                 </div>
-                {novoForm.empresa_id && (
-                  <div>
-                    <Label>Processo vinculado</Label>
-                    <Select value={novoForm.processo_id || "none"} onValueChange={(v) => setNovoForm({ ...novoForm, processo_id: v === "none" ? "" : v })}>
-                      <SelectTrigger><SelectValue placeholder="Sem processo vinculado" /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">Sem processo vinculado</SelectItem>
-                        {processosDaEmpresa.map((p) => (
-                          <SelectItem key={p.id} value={p.id}>
-                            {p.nome}{p.numero_protocolo ? ` Â· ${p.numero_protocolo}` : ""}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+
+                {createMode === "individual" ? (
+                  <>
+                    <div>
+                      <Label>Empresa *</Label>
+                      <Select value={novoForm.empresa_id} onValueChange={(v) => setNovoForm({ ...novoForm, empresa_id: v, processo_id: "" })}>
+                        <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                        <SelectContent>
+                          {empresas.map((e) => (
+                            <SelectItem key={e.id} value={e.id}>
+                              {e.nome}{e.cnpj ? ` - ${e.cnpj}` : ""}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>Processo vinculado</Label>
+                      <Select
+                        value={novoForm.processo_id || "none"}
+                        onValueChange={(v) => setNovoForm({ ...novoForm, processo_id: v === "none" ? "" : v })}
+                        disabled={!novoForm.empresa_id}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder={novoForm.empresa_id ? "Sem processo vinculado" : "Escolha uma empresa para listar processos"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Sem processo vinculado</SelectItem>
+                          {processosDaEmpresa.map((p) => (
+                            <SelectItem key={p.id} value={p.id}>
+                              {p.nome}{p.numero_protocolo ? ` - ${p.numero_protocolo}` : ""}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {!novoForm.empresa_id && (
+                        <p className="mt-1 text-xs text-muted-foreground">Escolha uma empresa para listar processos.</p>
+                      )}
+                    </div>
+                    <div>
+                      <Label>Template *</Label>
+                      <Select value={novoForm.template_id} onValueChange={(v) => setNovoForm({ ...novoForm, template_id: v })}>
+                        <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                        <SelectContent>
+                          {templates.map((t) => (
+                            <SelectItem key={t.id} value={t.id}>
+                              {t.nome} ({t.prazo_base_dias}d)
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>Data inicial</Label>
+                      <Input
+                        type="date"
+                        value={novoForm.data_inicial}
+                        onChange={(e) => setNovoForm({ ...novoForm, data_inicial: e.target.value })}
+                      />
+                    </div>
+                    <Button onClick={handleCriar} className="w-full" disabled={!novoForm.empresa_id || !novoForm.template_id || creating}>
+                      {creating ? "Criando..." : "Criar servico"}
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <div>
+                      <Label>Empresas *</Label>
+                      <MultiSelect
+                        label="Selecionar empresas"
+                        options={empresas.map((e) => ({ value: e.id, label: e.nome }))}
+                        selected={loteForm.empresa_ids}
+                        onChange={(empresa_ids) => setLoteForm({ ...loteForm, empresa_ids })}
+                        className="mt-1 w-full sm:w-full"
+                      />
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Cada empresa selecionada recebera um servico sem processo vinculado.
+                      </p>
+                    </div>
+                    <div>
+                      <Label>Template *</Label>
+                      <Select value={loteForm.template_id} onValueChange={(v) => setLoteForm({ ...loteForm, template_id: v })}>
+                        <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                        <SelectContent>
+                          {templates.map((t) => (
+                            <SelectItem key={t.id} value={t.id}>
+                              {t.nome} ({t.prazo_base_dias}d)
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>Data inicial</Label>
+                      <Input
+                        type="date"
+                        value={loteForm.data_inicial}
+                        onChange={(e) => setLoteForm({ ...loteForm, data_inicial: e.target.value })}
+                      />
+                    </div>
+                    <Button
+                      onClick={handleCriarLote}
+                      className="w-full"
+                      disabled={!loteForm.empresa_ids.length || !loteForm.template_id || !loteForm.data_inicial || creating}
+                    >
+                      {creating ? "Criando..." : `Criar ${loteForm.empresa_ids.length || ""} servico(s)`}
+                    </Button>
+                  </>
                 )}
-                <div>
-                  <Label>Template *</Label>
-                  <Select value={novoForm.template_id} onValueChange={(v) => setNovoForm({ ...novoForm, template_id: v })}>
-                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                    <SelectContent>
-                      {templates.map((t) => (
-                        <SelectItem key={t.id} value={t.id}>
-                          {t.nome} ({t.prazo_base_dias}d)
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Data inicial</Label>
-                  <Input
-                    type="date"
-                    value={novoForm.data_inicial}
-                    onChange={(e) => setNovoForm({ ...novoForm, data_inicial: e.target.value })}
-                  />
-                </div>
-                <Button onClick={handleCriar} className="w-full" disabled={!novoForm.empresa_id || !novoForm.template_id}>
-                  Criar serviço
-                </Button>
               </div>
             </DialogContent>
           </Dialog>

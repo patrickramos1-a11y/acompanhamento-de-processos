@@ -6,6 +6,7 @@ import {
   getServicosData,
   getServicosByProcesso,
   criarServicoFromTemplate,
+  criarServicosFromTemplateBatch,
   concluirTarefa,
   reabrirTarefa,
   cancelarTarefa,
@@ -1336,12 +1337,16 @@ function CriarTarefaModal({
   });
 
   const templates = data?.templates ?? [];
+  const empresas = data?.empresas ?? [];
 
+  const [mode, setMode] = useState<"processo" | "lote">("processo");
   const [templateId, setTemplateId] = useState<string>("");
+  const [empresaIds, setEmpresaIds] = useState<string[]>([]);
   const [dataInicial, setDataInicial] = useState<string>(() =>
     format(new Date(), "yyyy-MM-dd"),
   );
   const [createdServicoId, setCreatedServicoId] = useState<string | null>(null);
+  const [createdBatchIds, setCreatedBatchIds] = useState<string[]>([]);
 
   const { data: servicosProcessoData, isLoading: isLoadingServicosProcesso } = useQuery({
     queryKey: ["servicos-por-processo", processoId],
@@ -1356,14 +1361,18 @@ function CriarTarefaModal({
   useEffect(() => {
     if (processoId) {
       setTemplateId("");
+      setEmpresaIds([]);
       setDataInicial(format(new Date(), "yyyy-MM-dd"));
       setCreatedServicoId(null);
+      setCreatedBatchIds([]);
+      setMode("processo");
     }
   }, [processoId]);
 
 
   const queryClient = useQueryClient();
   const criarFn = useServerFn(criarServicoFromTemplate);
+  const criarBatchFn = useServerFn(criarServicosFromTemplateBatch);
   const mutation = useMutation({
     mutationFn: (vars: {
       empresa_id: string;
@@ -1381,8 +1390,28 @@ function CriarTarefaModal({
       ]);
     },
   });
+  const batchMutation = useMutation({
+    mutationFn: (vars: {
+      empresa_ids: string[];
+      template_id: string;
+      data_inicial: string;
+      processo_id: null;
+    }) => criarBatchFn({ data: vars }),
+    onSuccess: async (result) => {
+      setTemplateId("");
+      setEmpresaIds([]);
+      setCreatedServicoId(null);
+      setCreatedBatchIds(result.ids);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["servicos-data"], refetchType: "active" }),
+        queryClient.invalidateQueries({ queryKey: ["dashboard"], refetchType: "active" }),
+      ]);
+    },
+  });
 
-  const disabled = !templateId || !dataInicial || mutation.isPending;
+  const disabled = mode === "processo"
+    ? !templateId || !dataInicial || mutation.isPending
+    : !empresaIds.length || !templateId || !dataInicial || batchMutation.isPending;
 
   return (
     <Dialog open={!!processoId} onOpenChange={(o) => !o && onClose()}>
@@ -1399,6 +1428,22 @@ function CriarTarefaModal({
 
         <div className="grid max-h-[72vh] overflow-auto lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
           <div className="space-y-4 border-b border-border px-5 py-5 lg:border-b-0 lg:border-r">
+          <div className="grid grid-cols-2 rounded-lg bg-muted p-1">
+            <button
+              type="button"
+              onClick={() => setMode("processo")}
+              className={`rounded-md px-3 py-1.5 text-sm font-medium ${mode === "processo" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-background"}`}
+            >
+              Processo atual
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode("lote")}
+              className={`rounded-md px-3 py-1.5 text-sm font-medium ${mode === "lote" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-background"}`}
+            >
+              Varias empresas
+            </button>
+          </div>
           <div>
             <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-muted-foreground">
               Empresa
@@ -1417,6 +1462,24 @@ function CriarTarefaModal({
               {processo?.numero_protocolo ? ` · ${processo.numero_protocolo}` : ""}
             </div>
           </div>
+
+          {mode === "lote" && (
+            <div>
+              <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Empresas do lote <span className="text-destructive">*</span>
+              </label>
+              <MultiSelect
+                label="Selecionar empresas"
+                options={empresas.map((e) => ({ value: e.id, label: e.nome }))}
+                selected={empresaIds}
+                onChange={setEmpresaIds}
+                className="w-full sm:w-full"
+              />
+              <p className="mt-1 text-xs text-muted-foreground">
+                Sera criado um servico sem processo vinculado para cada empresa selecionada.
+              </p>
+            </div>
+          )}
 
           <div>
             <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-muted-foreground">
@@ -1459,9 +1522,19 @@ function CriarTarefaModal({
               {(mutation.error as Error)?.message ?? "Erro ao criar tarefa."}
             </p>
           )}
+          {batchMutation.isError && (
+            <p className="text-xs text-destructive">
+              {(batchMutation.error as Error)?.message ?? "Erro ao criar servicos em lote."}
+            </p>
+          )}
           {createdServicoId && (
             <div className="rounded-lg border border-success/30 bg-success/10 px-3 py-2 text-xs text-success">
               Tarefa criada e vinculada ao processo. Ela ja aparece na lista ao lado.
+            </div>
+          )}
+          {createdBatchIds.length > 0 && (
+            <div className="rounded-lg border border-success/30 bg-success/10 px-3 py-2 text-xs text-success">
+              {createdBatchIds.length} servico(s) criado(s) para as empresas selecionadas.
             </div>
           )}
           </div>
@@ -1503,6 +1576,16 @@ function CriarTarefaModal({
             type="button"
             disabled={disabled}
             onClick={() => {
+              if (mode === "lote") {
+                if (!empresaIds.length || !templateId) return;
+                batchMutation.mutate({
+                  empresa_ids: empresaIds,
+                  template_id: templateId,
+                  data_inicial: dataInicial,
+                  processo_id: null,
+                });
+                return;
+              }
               if (!processo || !templateId) return;
               mutation.mutate({
                 empresa_id: processo.empresa_id,
@@ -1513,8 +1596,8 @@ function CriarTarefaModal({
             }}
             className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {mutation.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-            Criar e manter aberto
+            {(mutation.isPending || batchMutation.isPending) && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+            {mode === "lote" ? `Criar ${empresaIds.length || ""} servico(s)` : "Criar e manter aberto"}
           </button>
         </div>
       </DialogContent>

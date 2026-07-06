@@ -335,9 +335,12 @@ export const deleteTemplateTarefa = createServerFn({ method: "POST" })
 // Serviços
 // ============================================================
 
-export const criarServicoFromTemplate = createServerFn({ method: "POST" })
-  .inputValidator((d: { empresa_id: string; template_id: string; data_inicial: string; processo_id?: string | null }) => d)
-  .handler(async ({ data }) => {
+async function criarServicoFromTemplateCore(data: {
+  empresa_id: string;
+  template_id: string;
+  data_inicial: string;
+  processo_id?: string | null;
+}) {
     // Carrega template
     const { data: tpl, error: tplErr } = await supabaseAdmin
       .from("templates").select("*").eq("id", data.template_id).single();
@@ -405,6 +408,32 @@ export const criarServicoFromTemplate = createServerFn({ method: "POST" })
     await recalcAndPersist(srv.id);
 
     return { id: srv.id };
+}
+
+export const criarServicoFromTemplate = createServerFn({ method: "POST" })
+  .inputValidator((d: { empresa_id: string; template_id: string; data_inicial: string; processo_id?: string | null }) => d)
+  .handler(async ({ data }) => {
+    return criarServicoFromTemplateCore(data);
+  });
+
+export const criarServicosFromTemplateBatch = createServerFn({ method: "POST" })
+  .inputValidator((d: { empresa_ids: string[]; template_id: string; data_inicial: string; processo_id?: null }) => d)
+  .handler(async ({ data }) => {
+    const empresaIds = Array.from(new Set(data.empresa_ids.filter(Boolean)));
+    if (empresaIds.length === 0) throw new Error("Selecione ao menos uma empresa.");
+
+    const created = [];
+    for (const empresa_id of empresaIds) {
+      const result = await criarServicoFromTemplateCore({
+        empresa_id,
+        template_id: data.template_id,
+        data_inicial: data.data_inicial,
+        processo_id: null,
+      });
+      created.push(result.id);
+    }
+
+    return { ids: created };
   });
 
 export const deleteServico = createServerFn({ method: "POST" })
