@@ -181,9 +181,12 @@ export const getServicoById = createServerFn({ method: "GET" })
     const { data: srv, error } = await supabaseAdmin
       .from("servicos").select("*").eq("id", data.id).single();
     if (error || !srv) throw new Error(error?.message ?? "Serviço não encontrado");
-    const [{ data: tarefas }, { data: empresa }] = await Promise.all([
+    const [{ data: tarefas }, { data: empresa }, { data: processo }] = await Promise.all([
       supabaseAdmin.from("servico_tarefas").select("*").eq("servico_id", data.id).order("ordem"),
       supabaseAdmin.from("empresas").select("id, nome, cnpj").eq("id", srv.empresa_id).maybeSingle(),
+      srv.processo_id
+        ? supabaseAdmin.from("processos").select("id,nome,numero_protocolo,empresa_id,status").eq("id", srv.processo_id).maybeSingle()
+        : Promise.resolve({ data: null }),
     ]);
     return {
       servico: {
@@ -196,6 +199,7 @@ export const getServicoById = createServerFn({ method: "GET" })
         })),
       } as Servico,
       empresa: empresa ?? null,
+      processo: processo ?? null,
     };
   });
 

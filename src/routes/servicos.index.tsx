@@ -117,6 +117,7 @@ function ServicosPage() {
   });
 
   const empresaMap = useMemo(() => new Map(empresas.map((e) => [e.id, e])), [empresas]);
+  const processoMap = useMemo(() => new Map(processos.map((p) => [p.id, p])), [processos]);
   const processosDaEmpresa = useMemo(
     () => processos.filter((p) => p.empresa_id === novoForm.empresa_id),
     [processos, novoForm.empresa_id],
@@ -466,6 +467,7 @@ function ServicosPage() {
 
           {filtered.map((s) => {
             const empresa = empresaMap.get(s.empresa_id);
+            const processo = s.processo_id ? processoMap.get(s.processo_id) : null;
             const progresso = calcularProgresso(s);
             const isOpen = expanded.has(s.id);
             const atrasado = s._vis.atrasado || (s.status !== "concluido" && parseISO(s.data_prevista_atual) < now);
@@ -494,6 +496,18 @@ function ServicosPage() {
                     <p className="mt-0.5 text-xs text-muted-foreground">
                       Início: {formatDate(s.data_inicial)} • Previsão: {formatDate(s.data_prevista_atual)} • {progresso}%
                     </p>
+                    {processo && (
+                      <p className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                        <ClipboardList className="h-3.5 w-3.5" />
+                        <span className="font-medium text-foreground">Processo:</span>
+                        <span>{processo.nome}</span>
+                        {processo.numero_protocolo && (
+                          <Badge variant="outline" className="h-5 px-1.5 text-[10px]">
+                            {processo.numero_protocolo}
+                          </Badge>
+                        )}
+                      </p>
+                    )}
                     <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
                       <div
                         className={`h-full rounded-full ${atrasado ? "bg-destructive" : "bg-gradient-to-r from-primary to-primary-glow"}`}

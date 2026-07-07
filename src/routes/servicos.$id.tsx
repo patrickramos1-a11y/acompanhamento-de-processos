@@ -63,7 +63,7 @@ function ServicoDetail() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { data } = useSuspenseQuery(servicoQuery(id));
-  const { servico, empresa } = data;
+  const { servico, empresa, processo } = data;
   const [avulsaOpen, setAvulsaOpen] = useState(false);
   const [avulsaForm, setAvulsaForm] = useState({
     titulo: "",
@@ -165,13 +165,21 @@ function ServicoDetail() {
           Voltar para serviços
         </Link>
 
-        <div className="surface-elevated grid grid-cols-1 gap-3 rounded-2xl p-4 sm:grid-cols-2 sm:gap-4 sm:p-5 md:grid-cols-4">
+        <div className="surface-elevated grid grid-cols-1 gap-3 rounded-2xl p-4 sm:grid-cols-2 sm:gap-4 sm:p-5 md:grid-cols-4 lg:grid-cols-5">
           <InfoCard
             icon={<Building2 className="h-4 w-4" />}
             label="Empresa"
             value={empresa?.nome ?? "—"}
             sub={empresa?.cnpj ?? undefined}
           />
+          {processo && (
+            <InfoCard
+              icon={<ClipboardList className="h-4 w-4" />}
+              label="Processo"
+              value={processo.nome}
+              sub={processo.numero_protocolo ?? undefined}
+            />
+          )}
           <InfoCard
             icon={<Calendar className="h-4 w-4" />}
             label="Data inicial"
