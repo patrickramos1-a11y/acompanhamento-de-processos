@@ -94,8 +94,8 @@ function ServicosPage() {
   const { empresas, processos, templates, servicos } = data;
 
   const now = new Date();
-  const [filterMonth, setFilterMonth] = useState(now.getMonth());
-  const [filterYear, setFilterYear] = useState(now.getFullYear());
+  const [filterMonths, setFilterMonths] = useState<string[]>([String(now.getMonth())]);
+  const [filterYears, setFilterYears] = useState<string[]>([String(now.getFullYear())]);
   const [filterEmpresas, setFilterEmpresas] = useState<string[]>([]);
   const [filterStatus, setFilterStatus] = useState<string[]>([]);
   const [filterTemplates, setFilterTemplates] = useState<string[]>([]);
@@ -123,20 +123,44 @@ function ServicosPage() {
     [processos, novoForm.empresa_id],
   );
 
-  const visivelNoMes = (s: typeof servicos[number]) => {
+  const anos = useMemo(() => {
+    const s = new Set<number>([now.getFullYear()]);
+    servicos.forEach((sv) => {
+      s.add(parseISO(sv.data_inicial).getFullYear());
+      s.add(parseISO(sv.data_prevista_atual).getFullYear());
+    });
+    return Array.from(s).sort();
+  }, [servicos]);
+
+  const activeMonths = useMemo(
+    () => (filterMonths.length ? filterMonths.map(Number) : MONTHS.map((_, i) => i)),
+    [filterMonths],
+  );
+  const activeYears = useMemo(
+    () => (filterYears.length ? filterYears.map(Number) : anos),
+    [filterYears, anos],
+  );
+
+  const visivelNoPeriodo = (s: typeof servicos[number]) => {
     const inicio = parseISO(s.data_inicial);
     const previsao = parseISO(s.data_prevista_atual);
-    const filterStart = new Date(filterYear, filterMonth, 1);
     const inicioMonth = new Date(inicio.getFullYear(), inicio.getMonth(), 1);
     const previsaoMonth = new Date(previsao.getFullYear(), previsao.getMonth(), 1);
-    if (filterStart >= inicioMonth && filterStart <= previsaoMonth) return { visible: true, atrasado: false };
-    if (s.status !== "concluido" && filterStart > previsaoMonth) return { visible: true, atrasado: true };
+    let atrasado = false;
+    for (const year of activeYears) {
+      for (const month of activeMonths) {
+        const filterStart = new Date(year, month, 1);
+        if (filterStart >= inicioMonth && filterStart <= previsaoMonth) return { visible: true, atrasado: false };
+        if (s.status !== "concluido" && filterStart > previsaoMonth) atrasado = true;
+      }
+    }
+    if (atrasado) return { visible: true, atrasado: true };
     return { visible: false, atrasado: false };
   };
 
   const filtered = useMemo(() => {
     return servicos
-      .map((s) => ({ ...s, _vis: visivelNoMes(s) }))
+      .map((s) => ({ ...s, _vis: visivelNoPeriodo(s) }))
       .filter((s) => {
         if (!s._vis.visible) return false;
         if (filterEmpresas.length && !filterEmpresas.includes(s.empresa_id)) return false;
@@ -151,16 +175,7 @@ function ServicosPage() {
         }
         return true;
       });
-  }, [servicos, filterMonth, filterYear, filterEmpresas, filterTemplates, filterStatus]);
-
-  const anos = useMemo(() => {
-    const s = new Set<number>([now.getFullYear()]);
-    servicos.forEach((sv) => {
-      s.add(parseISO(sv.data_inicial).getFullYear());
-      s.add(parseISO(sv.data_prevista_atual).getFullYear());
-    });
-    return Array.from(s).sort();
-  }, [servicos]);
+  }, [servicos, activeMonths, activeYears, filterEmpresas, filterTemplates, filterStatus]);
 
   const allTarefas = filtered.flatMap((s) => s.tarefas).filter((t) => !(t.gerar_apos_conclusao && t.status === "bloqueada"));
   const kpis = {
@@ -279,22 +294,22 @@ function ServicosPage() {
 
         {/* Filtros */}
         <section className="glass grid gap-2 rounded-xl p-3 sm:flex sm:flex-wrap sm:items-center sm:gap-2">
-          <Select value={String(filterMonth)} onValueChange={(v) => setFilterMonth(Number(v))}>
-            <SelectTrigger className="h-9 w-full sm:w-[130px]"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {MONTHS.map((m, i) => (
-                <SelectItem key={m} value={String(i)}>{m}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={String(filterYear)} onValueChange={(v) => setFilterYear(Number(v))}>
-            <SelectTrigger className="h-9 w-full sm:w-[100px]"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {anos.map((y) => (
-                <SelectItem key={y} value={String(y)}>{y}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <MultiSelect
+            label="Meses"
+            options={MONTHS.map((m, i) => ({ value: String(i), label: m }))}
+            selected={filterMonths}
+            onChange={setFilterMonths}
+            searchPlaceholder="Buscar mes..."
+            className="sm:w-[150px]"
+          />
+          <MultiSelect
+            label="Anos"
+            options={anos.map((y) => ({ value: String(y), label: String(y) }))}
+            selected={filterYears}
+            onChange={setFilterYears}
+            searchPlaceholder="Buscar ano..."
+            className="sm:w-[120px]"
+          />
           <MultiSelect
             label="Empresa"
             options={empresas.map((e) => ({ value: e.id, label: e.nome }))}
@@ -456,7 +471,7 @@ function ServicosPage() {
         {/* Lista */}
         <div className="space-y-3">
           <p className="text-sm text-muted-foreground">
-            {filtered.length} serviço(s) em {MONTHS[filterMonth]} {filterYear}
+            {filtered.length} servico(s) no periodo selecionado
           </p>
 
           {filtered.length === 0 && (

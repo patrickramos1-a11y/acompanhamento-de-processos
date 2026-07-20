@@ -90,8 +90,19 @@ export function MultiSelect({
               })}
             </CommandGroup>
           </CommandList>
-          {selected.length > 0 && (
-            <div className="border-t p-1">
+          <div className="border-t p-1">
+            {selected.length < options.length && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 w-full justify-center text-xs"
+                onClick={() => onChange(options.map((opt) => opt.value))}
+              >
+                <Check className="mr-1 h-3 w-3" />
+                Selecionar todos
+              </Button>
+            )}
+            {selected.length > 0 && (
               <Button
                 variant="ghost"
                 size="sm"
@@ -101,8 +112,8 @@ export function MultiSelect({
                 <X className="mr-1 h-3 w-3" />
                 Limpar
               </Button>
-            </div>
-          )}
+            )}
+          </div>
         </Command>
       </PopoverContent>
     </Popover>
