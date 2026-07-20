@@ -10,9 +10,11 @@ import {
   addTemplateFase,
   updateTemplateFase,
   deleteTemplateFase,
+  reorderTemplateFases,
   addTemplateTarefa,
   updateTemplateTarefa,
   deleteTemplateTarefa,
+  reorderTemplateTarefas,
 } from "@/lib/servicos.functions";
 import { AppHeader } from "@/components/app-header";
 import { Button } from "@/components/ui/button";
@@ -54,6 +56,8 @@ import {
   ChevronRight,
   ChevronDown,
   Pencil,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import type { Template, TemplateTarefa, TipoPrazo } from "@/types/servicos";
 
@@ -295,7 +299,23 @@ function TemplateEditor({
 
   const removeFase = async (id: string) => {
     await deleteTemplateFase({ data: { id } });
+    await reorderTemplateFases({
+      data: {
+        template_id: template.id,
+        ordered_ids: template.fases.filter((f) => f.id !== id).map((f) => f.id),
+      },
+    });
     toast.success("Fase removida");
+    await onChanged();
+  };
+
+  const moveFase = async (faseId: string, direction: -1 | 1) => {
+    const fases = [...template.fases];
+    const index = fases.findIndex((f) => f.id === faseId);
+    const nextIndex = index + direction;
+    if (index < 0 || nextIndex < 0 || nextIndex >= fases.length) return;
+    [fases[index], fases[nextIndex]] = [fases[nextIndex], fases[index]];
+    await reorderTemplateFases({ data: { template_id: template.id, ordered_ids: fases.map((f) => f.id) } });
     await onChanged();
   };
 
@@ -314,13 +334,13 @@ function TemplateEditor({
     await onChanged();
   };
 
-  const addTarefa = async (faseId: string) => {
+  const addTarefa = async (fase: Template["fases"][number]) => {
     if (!taskForm.titulo.trim()) return;
     await addTemplateTarefa({
       data: {
-        fase_id: faseId,
+        fase_id: fase.id,
         ...taskForm,
-        ordem: 999,
+        ordem: fase.tarefas.length + 1,
       },
     });
     setTaskForm(defaultTaskForm);
@@ -355,9 +375,25 @@ function TemplateEditor({
     await onChanged();
   };
 
-  const removeTarefa = async (id: string) => {
+  const removeTarefa = async (fase: Template["fases"][number], id: string) => {
     await deleteTemplateTarefa({ data: { id } });
+    await reorderTemplateTarefas({
+      data: {
+        fase_id: fase.id,
+        ordered_ids: fase.tarefas.filter((t) => t.id !== id).map((t) => t.id),
+      },
+    });
     toast.success("Tarefa removida");
+    await onChanged();
+  };
+
+  const moveTarefa = async (fase: Template["fases"][number], tarefaId: string, direction: -1 | 1) => {
+    const tarefas = [...fase.tarefas];
+    const index = tarefas.findIndex((t) => t.id === tarefaId);
+    const nextIndex = index + direction;
+    if (index < 0 || nextIndex < 0 || nextIndex >= tarefas.length) return;
+    [tarefas[index], tarefas[nextIndex]] = [tarefas[nextIndex], tarefas[index]];
+    await reorderTemplateTarefas({ data: { fase_id: fase.id, ordered_ids: tarefas.map((t) => t.id) } });
     await onChanged();
   };
 
@@ -398,6 +434,10 @@ function TemplateEditor({
         </Button>
       </div>
 
+      <div className="rounded-lg border border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+        Alteracoes neste template afetam apenas novos servicos criados a partir dele.
+      </div>
+
       <div className="flex items-center justify-between">
         <h3 className="font-display text-sm font-semibold uppercase tracking-wider text-muted-foreground">
           Fases ({template.fases.length})
@@ -426,7 +466,7 @@ function TemplateEditor({
       )}
 
       <div className="space-y-3">
-        {template.fases.map((f) => (
+        {template.fases.map((f, faseIndex) => (
           <div key={f.id} className="rounded-xl border border-border bg-card p-4">
             <div className="mb-3 flex items-center justify-between gap-3">
               {editingFaseId === f.id ? (
@@ -454,7 +494,7 @@ function TemplateEditor({
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
-                <Badge variant="outline">Fase {f.ordem}</Badge>
+                <Badge variant="outline">Fase {faseIndex + 1}</Badge>
                 <span className="font-medium text-foreground">{f.nome}</span>
                 <span className="text-xs text-muted-foreground">
                   · {f.tarefas.length} tarefa(s)
@@ -462,6 +502,28 @@ function TemplateEditor({
                 </div>
               )}
               <div className="flex gap-1">
+                {editingFaseId !== f.id && (
+                  <>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      title="Mover fase para cima"
+                      disabled={faseIndex === 0}
+                      onClick={() => moveFase(f.id, -1)}
+                    >
+                      <ArrowUp className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      title="Mover fase para baixo"
+                      disabled={faseIndex === template.fases.length - 1}
+                      onClick={() => moveFase(f.id, 1)}
+                    >
+                      <ArrowDown className="h-3.5 w-3.5" />
+                    </Button>
+                  </>
+                )}
                 {editingFaseId !== f.id && (
                   <Button
                     size="icon"
@@ -501,7 +563,7 @@ function TemplateEditor({
             </div>
 
             <div className="space-y-1.5">
-              {f.tarefas.map((t) => (
+              {f.tarefas.map((t, tarefaIndex) => (
                 <div
                   key={t.id}
                   className="rounded-lg bg-muted/40 px-3 py-2 text-sm"
@@ -517,7 +579,11 @@ function TemplateEditor({
                     />
                   ) : (
                     <div className="flex items-center justify-between gap-2">
-                  <div className="flex-1">
+                  <div className="flex min-w-0 flex-1 items-center gap-2">
+                    <Badge variant="outline" className="shrink-0">
+                      {faseIndex + 1}.{tarefaIndex + 1}
+                    </Badge>
+                    <div className="min-w-0 flex-1">
                     <span className="font-medium">{t.titulo}</span>
                     <span className="ml-2 text-xs text-muted-foreground">
                       {t.duracao_dias}d •{" "}
@@ -525,8 +591,27 @@ function TemplateEditor({
                       {t.impacta_prazo && " • impacta prazo"}
                       {t.gerar_apos_conclusao && " • gerar após"}
                     </span>
+                    </div>
                   </div>
-                  <div className="flex gap-1">
+                  <div className="flex shrink-0 gap-1">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      title="Mover tarefa para cima"
+                      disabled={tarefaIndex === 0}
+                      onClick={() => moveTarefa(f, t.id, -1)}
+                    >
+                      <ArrowUp className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      title="Mover tarefa para baixo"
+                      disabled={tarefaIndex === f.tarefas.length - 1}
+                      onClick={() => moveTarefa(f, t.id, 1)}
+                    >
+                      <ArrowDown className="h-3.5 w-3.5" />
+                    </Button>
                     <Button
                       size="icon"
                       variant="ghost"
@@ -535,7 +620,7 @@ function TemplateEditor({
                     >
                       <Pencil className="h-3.5 w-3.5" />
                     </Button>
-                    <Button size="icon" variant="ghost" onClick={() => removeTarefa(t.id)}>
+                    <Button size="icon" variant="ghost" onClick={() => removeTarefa(f, t.id)}>
                       <Trash2 className="h-3.5 w-3.5 text-destructive" />
                     </Button>
                   </div>
@@ -626,7 +711,7 @@ function TemplateEditor({
                   />
                 </div>
                 <div className="flex gap-2">
-                  <Button onClick={() => addTarefa(f.id)} className="flex-1">
+                  <Button onClick={() => addTarefa(f)} className="flex-1">
                     Adicionar tarefa
                   </Button>
                   <Button variant="ghost" onClick={() => setAddingTarefa(null)}>

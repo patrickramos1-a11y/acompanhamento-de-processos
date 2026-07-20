@@ -299,6 +299,32 @@ export const deleteTemplateFase = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const reorderTemplateFases = createServerFn({ method: "POST" })
+  .inputValidator((d: { template_id: string; ordered_ids: string[] }) => d)
+  .handler(async ({ data }) => {
+    const orderedIds = Array.from(new Set(data.ordered_ids.filter(Boolean)));
+    const { data: fases, error: loadError } = await supabaseAdmin
+      .from("template_fases")
+      .select("id")
+      .eq("template_id", data.template_id);
+    if (loadError) throw new Error(loadError.message);
+
+    const validIds = new Set((fases ?? []).map((f) => f.id));
+    const normalizedIds = orderedIds.filter((id) => validIds.has(id));
+    for (const f of fases ?? []) {
+      if (!normalizedIds.includes(f.id)) normalizedIds.push(f.id);
+    }
+
+    const updates = await Promise.all(
+      normalizedIds.map((id, index) =>
+        supabaseAdmin.from("template_fases").update({ ordem: index + 1 }).eq("id", id),
+      ),
+    );
+    const updateError = updates.find((result) => result.error)?.error;
+    if (updateError) throw new Error(updateError.message);
+    return { ok: true };
+  });
+
 const tarefaInputSchema = z.object({
   fase_id: z.string().uuid(),
   titulo: z.string().min(1),
@@ -332,6 +358,32 @@ export const deleteTemplateTarefa = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { error } = await supabaseAdmin.from("template_tarefas").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const reorderTemplateTarefas = createServerFn({ method: "POST" })
+  .inputValidator((d: { fase_id: string; ordered_ids: string[] }) => d)
+  .handler(async ({ data }) => {
+    const orderedIds = Array.from(new Set(data.ordered_ids.filter(Boolean)));
+    const { data: tarefas, error: loadError } = await supabaseAdmin
+      .from("template_tarefas")
+      .select("id")
+      .eq("fase_id", data.fase_id);
+    if (loadError) throw new Error(loadError.message);
+
+    const validIds = new Set((tarefas ?? []).map((t) => t.id));
+    const normalizedIds = orderedIds.filter((id) => validIds.has(id));
+    for (const t of tarefas ?? []) {
+      if (!normalizedIds.includes(t.id)) normalizedIds.push(t.id);
+    }
+
+    const updates = await Promise.all(
+      normalizedIds.map((id, index) =>
+        supabaseAdmin.from("template_tarefas").update({ ordem: index + 1 }).eq("id", id),
+      ),
+    );
+    const updateError = updates.find((result) => result.error)?.error;
+    if (updateError) throw new Error(updateError.message);
     return { ok: true };
   });
 
