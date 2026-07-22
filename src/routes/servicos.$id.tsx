@@ -75,7 +75,17 @@ function ServicoDetail() {
   });
 
   const fasesExistentes = useMemo(
-    () => Array.from(new Set(servico.tarefas.map((t) => t.fase_nome).filter(Boolean))).sort(),
+    () => {
+      const nomes = new Set<string>();
+      return [...servico.tarefas]
+        .sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0))
+        .map((t) => t.fase_nome)
+        .filter((faseNome) => {
+          if (!faseNome || nomes.has(faseNome)) return false;
+          nomes.add(faseNome);
+          return true;
+        });
+    },
     [servico.tarefas],
   );
   const tarefasParaDependencia = useMemo(

@@ -39,7 +39,8 @@ export function CronogramaServico({
 
   const fases = useMemo(() => {
     const map = new Map<string, ServicoTarefa[]>();
-    for (const t of servico.tarefas) {
+    const tarefasOrdenadas = [...servico.tarefas].sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0));
+    for (const t of tarefasOrdenadas) {
       if (t.gerar_apos_conclusao && t.status === "bloqueada") continue;
       const list = map.get(t.fase_nome) ?? [];
       list.push(t);

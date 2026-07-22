@@ -215,6 +215,15 @@ export const getTemplateById = createServerFn({ method: "GET" })
     const { data: ttarefas } = faseIds.length
       ? await supabaseAdmin.from("template_tarefas").select("*").in("fase_id", faseIds).order("ordem")
       : { data: [] as any[] };
+    const tarefasByFase = new Map<string, any[]>();
+    for (const tt of ttarefas ?? []) {
+      const list = tarefasByFase.get(tt.fase_id) ?? [];
+      list.push(tt);
+      tarefasByFase.set(tt.fase_id, list);
+    }
+    const orderedTemplateTarefas = (fases ?? []).flatMap((fase) =>
+      (tarefasByFase.get(fase.id) ?? []).sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0)),
+    );
     const template: Template = {
       id: tpl.id,
       nome: tpl.nome,
@@ -428,11 +437,11 @@ async function criarServicoFromTemplateCore(data: {
 
     // Cria tarefas mapeando ids
     const idMap = new Map<string, string>();
-    for (const tt of ttarefas ?? []) idMap.set(tt.id, crypto.randomUUID());
+    for (const tt of orderedTemplateTarefas) idMap.set(tt.id, crypto.randomUUID());
 
     const faseNomeById = new Map((fases ?? []).map((f) => [f.id, f.nome]));
 
-    const rows = (ttarefas ?? []).map((tt, idx) => {
+    const rows = orderedTemplateTarefas.map((tt, idx) => {
       const id = idMap.get(tt.id)!;
       const dependeId = tt.depende_de_template_tarefa_id ? (idMap.get(tt.depende_de_template_tarefa_id) ?? null) : null;
       const status: "pendente" | "bloqueada" = tt.gerar_apos_conclusao ? "bloqueada" : dependeId ? "bloqueada" : "pendente";
@@ -600,7 +609,13 @@ export const adicionarTarefaServico = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => tarefaServicoInput.parse(d))
   .handler(async ({ data }) => {
     const status = data.gerar_apos_conclusao ? "bloqueada" : data.depende_de_servico_tarefa_id ? "bloqueada" : "pendente";
-    const { error } = await supabaseAdmin.from("servico_tarefas").insert({ ...data, status, ordem: 999 });
+    const { data: existentes, error: loadError } = await supabaseAdmin
+      .from("servico_tarefas")
+      .select("ordem")
+      .eq("servico_id", data.servico_id);
+    if (loadError) throw new Error(loadError.message);
+    const nextOrdem = Math.max(-1, ...(existentes ?? []).map((t) => Number(t.ordem ?? 0))) + 1;
+    const { error } = await supabaseAdmin.from("servico_tarefas").insert({ ...data, status, ordem: nextOrdem });
     if (error) throw new Error(error.message);
     await recalcAndPersist(data.servico_id);
     return { ok: true };
